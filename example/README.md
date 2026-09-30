@@ -65,7 +65,7 @@ that follow the scroll:
 | `SidesDemo` | Rows coming in from the left, then from the right |
 | `EffectsDemo` | Every effect on a row of its own, then a bounce and a combination |
 | `StaggerDemo` | A grid in slivers whose cards come in in turn, through a `SimpleRevealGroup` |
-| `PartsDemo` | Sections whose overline, title, text and button come in one after the other, as `RevealPart`s |
+| `PartsDemo` | Sections whose overline, title, text and button come in one after the other, as `RevealPart`s, most sections coming in themselves around them |
 | `TintWipeDemo` | Tints that clear and wipes that open, from an edge, a point, a circle or under a panel |
 | `ControllerDemo` | A manual block revealed from a button, and one hidden, played again and counted |
 | `ReplayDemo` | `once: false`, rows played again each time they come back |

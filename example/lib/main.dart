@@ -940,9 +940,84 @@ class MirrorDemo extends StatelessWidget {
   }
 }
 
+/// How far apart the pieces of a section come in.
+const Duration _pieceGap = Duration(milliseconds: 150);
+
+/// How a section of the pieces screen comes in itself, around its pieces, and
+/// the name its overline gives it.
+class _Entrance {
+  const _Entrance(this.label, this.reveal, {this.moves = true});
+
+  final String label;
+  final SimpleReveal Function(Widget child) reveal;
+
+  /// Whether the section itself moves, its pieces then waiting for it to be
+  /// on its way.
+  final bool moves;
+}
+
+final List<_Entrance> _entrances = <_Entrance>[
+  _Entrance(
+    'IN PLACE',
+    (Widget child) =>
+        SimpleReveal(fade: null, stagger: _pieceGap, child: child),
+    moves: false,
+  ),
+  _Entrance(
+    'FROM THE RIGHT',
+    (Widget child) => SimpleReveal(
+      slide: const SlideProperties.fromRight(200),
+      duration: const Duration(milliseconds: 800),
+      stagger: _pieceGap,
+      child: child,
+    ),
+  ),
+  _Entrance(
+    'ZOOMED IN',
+    (Widget child) => SimpleReveal(
+      zoom: const ZoomProperties(0.8),
+      duration: const Duration(milliseconds: 800),
+      stagger: _pieceGap,
+      child: child,
+    ),
+  ),
+  _Entrance(
+    'FROM THE LEFT',
+    (Widget child) => SimpleReveal(
+      slide: const SlideProperties.fromLeft(200),
+      duration: const Duration(milliseconds: 800),
+      stagger: _pieceGap,
+      child: child,
+    ),
+  ),
+  _Entrance(
+    'FLIPPED UP',
+    (Widget child) => SimpleReveal(
+      flip: const FlipProperties.aroundX(
+        -0.25,
+        alignment: Alignment.topCenter,
+      ),
+      duration: const Duration(milliseconds: 900),
+      stagger: _pieceGap,
+      child: child,
+    ),
+  ),
+  _Entrance(
+    'RISING, SOFTENED',
+    (Widget child) => SimpleReveal(
+      slide: const SlideProperties.fromBottom(100),
+      blur: const BlurProperties(10),
+      duration: const Duration(milliseconds: 900),
+      stagger: _pieceGap,
+      child: child,
+    ),
+  ),
+];
+
 /// A section of a page as a web builder would lay it out: an overline, a
 /// title, a line of text and a button, each coming in its own way, one after
-/// the other, once the section is seen.
+/// the other, once the section is seen, and the section itself coming in its
+/// own way around them.
 class _Chapter extends StatelessWidget {
   const _Chapter(this.index);
 
@@ -952,28 +1027,29 @@ class _Chapter extends StatelessWidget {
   Widget build(BuildContext context) {
     final _Note note = _noteAt(index);
     final bool fromLeft = index.isEven;
+    final _Entrance entrance = _entrances[index % _entrances.length];
+    // Pieces of a section that moves wait for it to be on its way.
+    final Duration lead =
+        entrance.moves ? const Duration(milliseconds: 250) : Duration.zero;
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: _card,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          // The block itself does not move: only its pieces do, 150
-          // milliseconds apart.
-          child: SimpleReveal(
-            fade: null,
-            stagger: const Duration(milliseconds: 150),
+        child: entrance.reveal(
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: _card,
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 RevealPart(
                   slide: SlideProperties.fromLeft(fromLeft ? 40 : -40),
+                  delay: lead,
                   child: Text(
-                    'CHAPTER ${index + 1}',
+                    'CHAPTER ${index + 1}  \u00b7  ${entrance.label}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -989,6 +1065,7 @@ class _Chapter extends StatelessWidget {
                   slide: const SlideProperties.fromBottom(44),
                   clipBehavior: Clip.hardEdge,
                   duration: const Duration(milliseconds: 700),
+                  delay: lead,
                   child: Text(
                     note.title,
                     style: const TextStyle(
@@ -1002,6 +1079,7 @@ class _Chapter extends StatelessWidget {
                 const SizedBox(height: 10),
                 RevealPart(
                   blur: const BlurProperties(6),
+                  delay: lead,
                   child: Text(
                     '${note.detail} ${_noteAt(index + 3).detail}',
                     style: const TextStyle(
@@ -1015,7 +1093,7 @@ class _Chapter extends StatelessWidget {
                 RevealPart(
                   zoom: const ZoomProperties(0.6),
                   curve: Curves.easeOutBack,
-                  delay: const Duration(milliseconds: 150),
+                  delay: lead + const Duration(milliseconds: 150),
                   child: FilledButton(
                     onPressed: () {},
                     style: FilledButton.styleFrom(backgroundColor: note.dot),
@@ -1048,7 +1126,9 @@ class PartsDemo extends StatelessWidget {
             const _Lead(
               'Each section waits to be seen, then its overline, its title, its '
               'text and its button come in 150 milliseconds apart, each its own '
-              'way. The button waits a little longer still.',
+              'way, the button a little later still. The first section stays '
+              'where it is; the others come in themselves too, as their '
+              'overline says, with their pieces following inside.',
             ),
             const _Gap(),
             for (int i = 0; i < 6; i++) _Chapter(i),
