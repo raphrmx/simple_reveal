@@ -75,6 +75,11 @@ class RevealBox extends SingleChildRenderObjectWidget {
 /// outside in, a clip to its bounds, a transform, the opening of a wipe, an
 /// opacity, a tint and a blur, each only when it changes something, and paints
 /// the panel of a wipe over what is not uncovered yet.
+///
+/// While a reveal runs on a clock, the box is a repaint boundary of its own, so
+/// a frame of it paints this box alone rather than everything up to the
+/// boundary above it; it stops being one once the reveal is over, and ticks
+/// that change nothing, while a delay is waited out, paint nothing.
 class RenderReveal extends RenderProxyBox {
   /// Draws its child as [look] describes it, [shown] of the way through.
   RenderReveal({
@@ -106,6 +111,7 @@ class RenderReveal extends RenderProxyBox {
   set shown(double Function() value) {
     if (value == _shown) return;
     _shown = value;
+    _updateRunning();
     markNeedsPaint();
   }
 
@@ -123,9 +129,10 @@ class RenderReveal extends RenderProxyBox {
   /// Paints the box again when it notifies.
   set repaint(Listenable? value) {
     if (value == _repaint) return;
-    if (attached) _repaint?.removeListener(markNeedsPaint);
+    if (attached) _repaint?.removeListener(_tick);
     _repaint = value;
-    if (attached) _repaint?.addListener(markNeedsPaint);
+    if (attached) _repaint?.addListener(_tick);
+    _updateRunning();
     markNeedsPaint();
   }
 
@@ -145,6 +152,61 @@ class RenderReveal extends RenderProxyBox {
   set onMoved(VoidCallback? value) => _onMoved = value;
 
   void _moved() => _onMoved?.call();
+
+  /// Whether a reveal is under way on a clock, which makes the box a repaint
+  /// boundary.
+  bool _running = false;
+
+  @override
+  bool get isRepaintBoundary => _running;
+
+  /// The progress the last paint drew, `null` before the first.
+  double? _painted;
+
+  /// Whether [_painted] still stands: nothing asked for a paint or a layout
+  /// since.
+  bool _paintedStands = false;
+
+  /// The progress as the box is drawn, read again only when it may have moved
+  /// since the last paint.
+  double _progress() => _paintedStands ? _painted! : _shown();
+
+  /// Follows whether the reveal runs on a clock, whose progress can be read
+  /// at any time, unlike that of a scrub, which needs the layout of the frame.
+  void _updateRunning() {
+    final bool running;
+    if (_repaint is Animation<double>) {
+      final double shown = _shown();
+      running = shown > 0 && shown < 1;
+    } else {
+      running = false;
+    }
+    if (running == _running) return;
+    _running = running;
+    markNeedsCompositingBitsUpdate();
+  }
+
+  /// Paints the box again for a notification of [repaint], unless it leaves
+  /// the progress of a clock where it was painted.
+  void _tick() {
+    if (_repaint is Animation<double>) {
+      _updateRunning();
+      if (_paintedStands && _shown() == _painted) return;
+    }
+    markNeedsPaint();
+  }
+
+  @override
+  void markNeedsPaint() {
+    _paintedStands = false;
+    super.markNeedsPaint();
+  }
+
+  @override
+  void performLayout() {
+    _paintedStands = false;
+    super.performLayout();
+  }
 
   /// What the paint under way draws, read by the painters it pushes layers
   /// for.
@@ -174,13 +236,13 @@ class RenderReveal extends RenderProxyBox {
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
-    _repaint?.addListener(markNeedsPaint);
+    _repaint?.addListener(_tick);
     _watch?.addListener(_moved);
   }
 
   @override
   void detach() {
-    _repaint?.removeListener(markNeedsPaint);
+    _repaint?.removeListener(_tick);
     _watch?.removeListener(_moved);
     super.detach();
   }
@@ -223,6 +285,8 @@ class RenderReveal extends RenderProxyBox {
     if (child == null) return;
 
     final double shown = _shown();
+    _painted = shown;
+    _paintedStands = true;
     if (shown == 1) {
       _clearLayers();
       context.paintChild(child!, offset);
@@ -390,27 +454,48 @@ class RenderReveal extends RenderProxyBox {
   /// in the cache extent of a list is laid out but not painted, and a tap or a
   /// position read from inside it still has to land where it will be drawn.
   Matrix4? _transformNow() {
-    final double shown = _shown();
+    final double shown = _progress();
     return shown == 1 ? null : _look.transformAt(shown, size);
   }
 
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    final double shown = _shown();
+    final double shown = _progress();
     if (shown == 1) return super.hitTest(result, position: position);
     // Nothing to see, so nothing to tap, and nothing outside a clip either.
     if (!_contentShowsAt(shown)) return false;
     if (_clipBehavior != Clip.none && !size.contains(position)) return false;
 
+    // Nor anything a wipe has not uncovered yet.
+    final Rect? opening = _look.openingAt(shown, size);
+    bool hitUncovered(BoxHitTestResult result, Offset position) {
+      if (opening != null && !_uncovers(opening, position)) return false;
+      return hitTestChildren(result, position: position);
+    }
+
     final Matrix4? transform = _look.transformAt(shown, size);
-    if (transform == null) return super.hitTest(result, position: position);
+    if (transform == null) {
+      if (!size.contains(position) || !hitUncovered(result, position)) {
+        return false;
+      }
+      result.add(BoxHitTestEntry(this, position));
+      return true;
+    }
     // Tested where the child is drawn, which may lie outside the box.
     return result.addWithPaintTransform(
       transform: transform,
       position: position,
-      hitTest: (BoxHitTestResult result, Offset position) =>
-          hitTestChildren(result, position: position),
+      hitTest: hitUncovered,
     );
+  }
+
+  /// Whether [opening] lets [position] through, a circle for a round one.
+  bool _uncovers(Rect opening, Offset position) {
+    if (!_look.roundOpening) return opening.contains(position);
+    if (opening.isEmpty) return false;
+    final double dx = (position.dx - opening.center.dx) / (opening.width / 2);
+    final double dy = (position.dy - opening.center.dy) / (opening.height / 2);
+    return dx * dx + dy * dy <= 1;
   }
 
   @override

@@ -142,7 +142,7 @@ class RevealLook {
         return rtl
             ? Rect.fromLTRB(0, 0, width * open, height)
             : Rect.fromLTRB(width * (1 - open), 0, width, height);
-      case WipeFrom.center:
+      case WipeFrom.point:
         final Offset at = wipe.alignment.alongSize(size);
         return Rect.fromLTRB(
           at.dx * (1 - open),

@@ -166,6 +166,9 @@ class _RevealPartState extends State<RevealPart>
 
   @override
   Widget build(BuildContext context) {
+    // Checked here, a const constructor having no way to compare durations.
+    assert(_runFor >= Duration.zero, 'duration cannot be negative');
+    assert(widget.delay >= Duration.zero, 'delay cannot be negative');
     final _SimpleRevealState? block = _block;
     final double Function() shown;
     if (block == null || !block._enabled) {

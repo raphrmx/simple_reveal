@@ -3,7 +3,8 @@ import 'package:flutter/widgets.dart';
 /// Settles, for every block below it, what a `SimpleReveal` or a `RevealPart`
 /// was not told.
 ///
-/// Put one at the top of an app, around `MaterialApp.builder` or a page, so
+/// Put one at the top of an app, around `MaterialApp` or in its `builder`, or
+/// around a page, so
 /// every reveal plays at the same pace without repeating it on each block. A
 /// block that sets a value itself keeps it, and one left out here falls back
 /// to the package default. The nearest one wins; they do not merge.

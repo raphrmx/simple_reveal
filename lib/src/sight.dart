@@ -45,7 +45,8 @@ List<ScrollableState> scrollablesAround(BuildContext context) {
 /// The block is [Sight.shown] once [threshold] of it can be seen on each axis.
 /// A block larger than the room it has is measured against that room instead,
 /// so a block taller than the screen is revealed once [threshold] of the screen
-/// is taken by it, not [threshold] of the block.
+/// is taken by it, not [threshold] of the block. A block with no extent on an
+/// axis is seen on that axis as soon as it lies within the room.
 Sight? sightOf(
   RenderBox block,
   List<ScrollableState> scrollables, {
@@ -53,24 +54,44 @@ Sight? sightOf(
   required double threshold,
 }) {
   if (!block.attached || !block.hasSize) return null;
-  final Rect rect = _globalRect(block);
 
+  // Most blocks still waiting are well outside the nearest scrollable. That is
+  // told through a walk up to it alone, shorter than the one to the screen.
+  if (scrollables.isNotEmpty) {
+    final RenderObject? near = scrollables.first.context.findRenderObject();
+    if (near is! RenderBox || !near.attached || !near.hasSize) return null;
+    final Rect local = MatrixUtils.transformRect(
+      block.getTransformTo(near),
+      Offset.zero & block.size,
+    );
+    if (!_meets(local, Offset.zero & near.size)) return Sight.out;
+  }
+
+  final Rect rect = _globalRect(block);
   Rect room = view;
   for (final ScrollableState scrollable in scrollables) {
     final RenderObject? box = scrollable.context.findRenderObject();
     if (box is! RenderBox || !box.attached || !box.hasSize) return null;
     room = room.intersect(_globalRect(box));
   }
+  if (!_meets(rect, room)) return Sight.out;
 
   final Rect seen = rect.intersect(room);
-  if (seen.width <= 0 || seen.height <= 0) return Sight.out;
-
   bool enough(double seen, double block, double room) =>
-      seen >= threshold * math.min(block, room) - _tolerance;
+      block == 0 || seen >= threshold * math.min(block, room) - _tolerance;
   return enough(seen.width, rect.width, room.width) &&
           enough(seen.height, rect.height, room.height)
       ? Sight.shown
       : Sight.partly;
+}
+
+/// Whether [rect] shares some of [room] on both axes: an overlap on an axis
+/// where it has an extent, lying within [room] on one where it has none.
+bool _meets(Rect rect, Rect room) {
+  bool along(double start, double end, double from, double to) =>
+      start == end ? start >= from && start <= to : start < to && end > from;
+  return along(rect.left, rect.right, room.left, room.right) &&
+      along(rect.top, rect.bottom, room.top, room.bottom);
 }
 
 /// Slack for a block exactly at the threshold, which the transforms leave a

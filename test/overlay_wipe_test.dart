@@ -121,11 +121,11 @@ void main() {
 
     test('grows out of a point, as a rectangle or as a circle', () {
       expect(
-        wipe(const WipeProperties.fromCenter()).openingAt(0.5, size),
+        wipe(const WipeProperties.fromPoint()).openingAt(0.5, size),
         const Rect.fromLTRB(25, 12.5, 75, 37.5),
       );
       expect(
-        wipe(const WipeProperties.fromCenter(alignment: Alignment.topLeft))
+        wipe(const WipeProperties.fromPoint(alignment: Alignment.topLeft))
             .openingAt(0.5, size),
         const Rect.fromLTRB(0, 0, 50, 25),
       );
@@ -255,5 +255,37 @@ void main() {
       await tester.tapAt(const Offset(50, 60));
       expect(taps, 1);
     });
+  });
+
+  testWidgets('answers taps only where a wipe has uncovered the block', (
+    WidgetTester tester,
+  ) async {
+    int taps = 0;
+    await tester.pumpWidget(
+      app(
+        listWith(
+          SimpleReveal(
+            fade: null,
+            wipe: const WipeProperties.fromLeft(),
+            duration: const Duration(seconds: 1),
+            curve: Curves.linear,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => taps++,
+              child: testBlock,
+            ),
+          ),
+          top: 0,
+        ),
+      ),
+    );
+    await startClock(tester);
+    await tester.pump(const Duration(milliseconds: 500));
+
+    // Half of it uncovered, from the left.
+    await tester.tapAt(const Offset(75, 50));
+    expect(taps, 0);
+    await tester.tapAt(const Offset(25, 50));
+    expect(taps, 1);
   });
 }

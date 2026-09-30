@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_reveal/simple_reveal.dart';
 
+import 'helpers.dart';
+
 void main() {
   group('SlideProperties', () {
     test('starts each named side the right way', () {
@@ -121,6 +123,44 @@ void main() {
         () => SimpleReveal(threshold: 2, child: const SizedBox()),
         throwsAssertionError,
       );
+    });
+  });
+
+  group('durations', () {
+    testWidgets('cannot be negative on a block', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        app(
+          const SimpleReveal(
+            delay: Duration(milliseconds: -1),
+            child: testBlock,
+          ),
+        ),
+      );
+      expect(tester.takeException(), isAssertionError);
+    });
+
+    testWidgets('cannot be negative on a part', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        app(
+          const RevealPart(
+            duration: Duration(milliseconds: -1),
+            child: testBlock,
+          ),
+        ),
+      );
+      expect(tester.takeException(), isAssertionError);
+    });
+
+    testWidgets('cannot be negative on a group', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        app(
+          const SimpleRevealGroup(
+            interval: Duration(milliseconds: -1),
+            child: testBlock,
+          ),
+        ),
+      );
+      expect(tester.takeException(), isAssertionError);
     });
   });
 }

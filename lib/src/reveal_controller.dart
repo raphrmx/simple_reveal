@@ -28,6 +28,9 @@ part of 'simple_reveal.dart';
 /// reveal.reveal();
 /// ```
 class RevealController extends ChangeNotifier {
+  /// Creates a controller, driving no block until one is given it.
+  RevealController();
+
   _SimpleRevealState? _state;
 
   /// Whether the block is revealed, or on its way. `true` for a block that is
@@ -38,7 +41,8 @@ class RevealController extends ChangeNotifier {
     return !state._enabled || state._started;
   }
 
-  /// Reveals the block now, whether it is in sight or not.
+  /// Reveals the block, whether it is in sight or not, after its
+  /// [SimpleReveal.delay].
   ///
   /// Does nothing if it is revealed already.
   void reveal() => _state?._reveal(bySight: false);
@@ -53,12 +57,26 @@ class RevealController extends ChangeNotifier {
   /// Hides the block at once and plays its reveal again.
   void replay() => _state?._replay();
 
+  /// Drives [state] from now on.
+  ///
+  /// A block that replaces another in the same frame, under a new key for
+  /// instance, is attached before the one it replaces is let go, so the last
+  /// one attached takes over. Two blocks both still there after the frame is
+  /// a mistake, reported then.
   void _attach(_SimpleRevealState state) {
-    assert(
-      _state == null || _state == state,
-      'A RevealController drives one SimpleReveal at a time.',
-    );
+    final _SimpleRevealState? before = _state;
     _state = state;
+    assert(() {
+      if (before != null && before != state) {
+        SchedulerBinding.instance.addPostFrameCallback((Duration _) {
+          assert(
+            !before.mounted || !state.mounted,
+            'A RevealController drives one SimpleReveal at a time.',
+          );
+        });
+      }
+      return true;
+    }());
   }
 
   void _detach(_SimpleRevealState state) {

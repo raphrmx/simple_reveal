@@ -201,4 +201,48 @@ void main() {
       expect(tester.hasRunningAnimations, isFalse);
     });
   });
+
+  testWidgets('moves to a block that replaces its own in the same frame', (
+    WidgetTester tester,
+  ) async {
+    Widget page(int key) => app(
+          SimpleReveal(
+            key: ValueKey<int>(key),
+            controller: controller,
+            manual: true,
+            fade: null,
+            slide: rise,
+            child: testBlock,
+          ),
+        );
+    await tester.pumpWidget(page(1));
+    await tester.pumpWidget(page(2));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    controller.reveal();
+    expect(controller.isRevealed, isTrue);
+  });
+
+  testWidgets('tells its listeners when its block is turned off', (
+    WidgetTester tester,
+  ) async {
+    int notified = 0;
+    controller.addListener(() => notified++);
+    Widget page({required bool enabled}) => app(
+          SimpleReveal(
+            controller: controller,
+            manual: true,
+            enabled: enabled,
+            child: testBlock,
+          ),
+        );
+    await tester.pumpWidget(page(enabled: true));
+    expect(controller.isRevealed, isFalse);
+
+    await tester.pumpWidget(page(enabled: false));
+    await tester.pump();
+    expect(controller.isRevealed, isTrue);
+    expect(notified, 1);
+  });
 }

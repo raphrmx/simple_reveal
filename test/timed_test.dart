@@ -383,4 +383,59 @@ void main() {
 
     expect(stillToRise(tester), 0);
   });
+
+  testWidgets('reveals a block with no height once its line is in view', (
+    WidgetTester tester,
+  ) async {
+    int reveals = 0;
+    await tester.pumpWidget(
+      app(
+        listWith(
+          SimpleReveal(
+            onReveal: () => reveals++,
+            child: const SizedBox(width: 100, height: 0),
+          ),
+          top: 100,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(reveals, 1);
+  });
+
+  testWidgets('paints only itself while it plays', (
+    WidgetTester tester,
+  ) async {
+    final _CountingPainter beside = _CountingPainter();
+    await tester.pumpWidget(
+      app(
+        Column(
+          children: <Widget>[
+            timedBlock(),
+            CustomPaint(painter: beside, size: const Size(10, 10)),
+          ],
+        ),
+      ),
+    );
+    await startClock(tester);
+    await tester.pump(const Duration(milliseconds: 100));
+    final int before = beside.paints;
+
+    for (int frame = 0; frame < 5; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(beside.paints, before);
+  });
+}
+
+/// Counts how often it is painted.
+class _CountingPainter extends CustomPainter {
+  int paints = 0;
+
+  @override
+  void paint(Canvas canvas, Size size) => paints++;
+
+  @override
+  bool shouldRepaint(_CountingPainter oldDelegate) => false;
 }

@@ -517,7 +517,7 @@ enum WipeFrom {
   end,
 
   /// A point of the block, as a rectangle growing out of it.
-  center,
+  point,
 
   /// A point of the block, as a circle growing out of it.
   circle,
@@ -539,7 +539,7 @@ enum WipeFrom {
 ///
 /// ### Parameters:
 /// - [from]: where the opening starts.
-/// - [alignment]: for [WipeFrom.center] and [WipeFrom.circle], the point of the
+/// - [alignment]: for [WipeFrom.point] and [WipeFrom.circle], the point of the
 ///   block it grows out of, its middle by default.
 /// - [color]: the panel over the part not uncovered yet, `null` for none.
 ///
@@ -582,11 +582,12 @@ class WipeProperties {
       : from = WipeFrom.end,
         alignment = Alignment.center;
 
-  /// Opens as a rectangle growing out of [alignment].
-  const WipeProperties.fromCenter({
+  /// Opens as a rectangle growing out of [alignment], the middle of the block
+  /// by default.
+  const WipeProperties.fromPoint({
     this.alignment = Alignment.center,
     this.color,
-  }) : from = WipeFrom.center;
+  }) : from = WipeFrom.point;
 
   /// Opens as a circle growing out of [alignment], until it reaches the
   /// farthest corner.
@@ -596,7 +597,7 @@ class WipeProperties {
   /// Where the opening starts.
   final WipeFrom from;
 
-  /// The point a [WipeFrom.center] or [WipeFrom.circle] opening grows out of.
+  /// The point a [WipeFrom.point] or [WipeFrom.circle] opening grows out of.
   final Alignment alignment;
 
   /// The panel over the part not uncovered yet, `null` for none.

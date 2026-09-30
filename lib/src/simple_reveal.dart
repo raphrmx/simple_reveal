@@ -71,7 +71,7 @@ const Curve _defaultCurve = Curves.easeOutCubic;
 ///   reveal runs, for a slide that rises from an invisible line.
 /// - [duration], [curve], [threshold] and [once]: how the reveal plays, each
 ///   `null` for the [SimpleRevealDefaults] above, or the package default.
-/// - [delay]: how long it waits once the block is seen.
+/// - [delay]: how long it waits once the block is seen, or told to.
 /// - [stagger]: how far apart the [RevealPart]s inside come in.
 /// - [scrub]: ties the reveal to the scroll instead, `null` for a timed one.
 /// - [scrollAxis]: the axis of the scrollable a [scrub] follows, `null` for
@@ -188,8 +188,8 @@ class SimpleReveal extends StatefulWidget {
 
   /// How far the block starts turned in depth, `null` for flat.
   ///
-  /// Applied before [rotate] and [zoom], so a block can come in both flipped
-  /// and turned; [slide] moves the result.
+  /// The block is zoomed and turned first, then flipped, so it can come in
+  /// both turned and flipped; [slide] moves the result.
   final FlipProperties? flip;
 
   /// How tinted the block starts, `null` for its own colours.
@@ -211,8 +211,8 @@ class SimpleReveal extends StatefulWidget {
   /// [scrub].
   final Duration? duration;
 
-  /// How long the reveal waits once the block is seen. Not read with a
-  /// [scrub].
+  /// How long the reveal waits once the block is seen, or told to by its
+  /// [controller]. Not read with a [scrub].
   ///
   /// Blocks that come into view together, a row of cards for instance, come
   /// in one after the other when each waits a little longer than the last. A
@@ -244,8 +244,10 @@ class SimpleReveal extends StatefulWidget {
   ///
   /// In a list that builds its children lazily, a block scrolled far enough
   /// away is disposed, and comes back as a new one. Give it a [PageStorageKey],
-  /// or wrap it in something that has one, and it remembers it was revealed:
-  /// it comes back in place rather than playing again.
+  /// or give one to the widget the list builds around it, and it remembers it
+  /// was revealed: it comes back in place rather than playing again. A key on
+  /// the list itself, or further up, is shared by every block in the list, so
+  /// a block does not remember by it.
   final bool? once;
 
   /// How far apart the [RevealPart]s inside the block come in, in reading
@@ -360,6 +362,10 @@ class _SimpleRevealState extends State<SimpleReveal>
   bool _checkScheduled = false;
   bool _rebuildScheduled = false;
 
+  /// Whether the block was enabled as of the last look, `null` before the
+  /// first: turning it on or off changes what its controller reads.
+  bool? _enabledBefore;
+
   @override
   Duration get _runFor =>
       widget.duration ?? _defaults?.duration ?? _defaultDuration;
@@ -413,6 +419,7 @@ class _SimpleRevealState extends State<SimpleReveal>
     }
     if (_still && !wasStill) _settle();
     _retime();
+    _noteEnabled();
   }
 
   @override
@@ -422,14 +429,39 @@ class _SimpleRevealState extends State<SimpleReveal>
       oldWidget.controller?._detach(this);
       widget.controller?._attach(this);
     }
+    if ((widget.scrub == null) != (oldWidget.scrub == null)) {
+      // The two ways of revealing keep their state apart: start again hidden,
+      // and let the next look say what the other way makes of it.
+      _started = false;
+      _held = false;
+      _jump(shown: false);
+      for (final _RevealPartState part in _parts) {
+        part._jump(shown: false);
+      }
+    }
     _retime();
     if (_still) _settle();
+    _noteEnabled();
   }
 
   @override
   void dispose() {
     widget.controller?._detach(this);
     super.dispose();
+  }
+
+  /// Tells the controller when turning the block on or off changed what it
+  /// reads, after the frame, as this runs while the tree is being built.
+  void _noteEnabled() {
+    final bool enabled = _enabled;
+    final bool? before = _enabledBefore;
+    _enabledBefore = enabled;
+    if (before == null || before == enabled || widget.controller == null) {
+      return;
+    }
+    SchedulerBinding.instance.addPostFrameCallback((Duration _) {
+      if (mounted) widget.controller?._changed();
+    });
   }
 
   /// Brings a reveal under way to its end at once, for reduced motion.
@@ -464,7 +496,8 @@ class _SimpleRevealState extends State<SimpleReveal>
   /// Starts the reveal on its clock, [after] a wait handed out by a group,
   /// then the block's own [SimpleReveal.delay].
   void _start(Duration after) {
-    if (!mounted) return;
+    // Hidden again, or gone, while it waited its turn.
+    if (!mounted || !_started) return;
     final Duration lead = after + widget.delay;
     _play(lead);
     _startParts(lead);
@@ -535,13 +568,22 @@ class _SimpleRevealState extends State<SimpleReveal>
     _parts.add(part);
     if (!_started) return;
     // Joining a block already revealed: in place if its reveal is over,
-    // played on its own if it is under way.
+    // played on its own if it is under way, after whatever the block still
+    // waits and its turn among the parts.
     final AnimationController? clock = _controller;
     if (_still || _scrubbing || clock == null || clock.isCompleted) {
       part._jump(shown: true);
     } else {
-      part._play(Duration.zero);
+      part._play(_leadLeft(clock) + widget.stagger * (_parts.length - 1));
     }
+  }
+
+  /// How much longer the play under way on [clock] holds the block at `0`.
+  Duration _leadLeft(AnimationController clock) {
+    if (!clock.isAnimating) return Duration.zero;
+    final Duration left =
+        _lead - (clock.duration ?? Duration.zero) * clock.value;
+    return left > Duration.zero ? left : Duration.zero;
   }
 
   void _detachPart(_RevealPartState part) => _parts.remove(part);
@@ -557,10 +599,14 @@ class _SimpleRevealState extends State<SimpleReveal>
       return;
     }
     final List<_RevealPartState> ordered = List<_RevealPartState>.of(_parts);
+    // Read where the parts are laid out in the block, not where the block,
+    // turned or flipped before its reveal, draws them.
+    final RenderObject? box = context.findRenderObject();
     _sortInReadingOrder(
       ordered,
       (_RevealPartState part) => part.context,
       Directionality.maybeOf(context) ?? TextDirection.ltr,
+      within: box is RenderReveal ? box.child : null,
     );
     for (int i = 0; i < ordered.length; i++) {
       ordered[i]._play(lead + widget.stagger * i);
@@ -601,6 +647,13 @@ class _SimpleRevealState extends State<SimpleReveal>
     return scrubOf(followed, block, scrub);
   }
 
+  /// Whether some of the block can be seen, as of now.
+  bool get _inSight {
+    final RenderObject? block = context.findRenderObject();
+    if (block is! RenderBox) return false;
+    return sightOf(block, _scrollables, view: _view, threshold: 0) != Sight.out;
+  }
+
   /// How a timed block is drawn under reduced motion.
   double _stillShown() => _stillState == _Still.hidden ? 0 : 1;
 
@@ -637,27 +690,38 @@ class _SimpleRevealState extends State<SimpleReveal>
     }
 
     final RenderObject? block = context.findRenderObject();
-    if (block is! RenderBox) return;
-    switch (sightOf(
-      block,
-      _scrollables,
-      view: _view,
-      threshold: _threshold,
-    )) {
-      case Sight.shown when !_started && !_held:
-        _reveal(bySight: true);
-      case Sight.out when _held:
-        _held = false;
-        _changed();
-      case Sight.out when _started && !_once:
-        _hide(byHand: false);
-      case _:
-        break;
+    if (block is RenderBox) {
+      switch (sightOf(
+        block,
+        _scrollables,
+        view: _view,
+        threshold: _threshold,
+      )) {
+        case Sight.shown when !_started && !_held:
+          _reveal(bySight: true);
+        case Sight.out when _held:
+          _held = false;
+          _changed();
+        case Sight.out when _started && !_once:
+          _hide(byHand: false);
+        case _:
+          break;
+      }
     }
+
+    // A block still waiting can come into view with no scroll and no paint of
+    // its own: on a page sliding in, or as the content above it changes. So
+    // it looks again after the next frame, whenever there is one. Waiting for
+    // a frame does not ask for one, so a still screen costs nothing.
+    if (!_started || _held) _schedule();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Checked here, a const constructor having no way to compare durations.
+    assert(_runFor >= Duration.zero, 'duration cannot be negative');
+    assert(widget.delay >= Duration.zero, 'delay cannot be negative');
+    assert(widget.stagger >= Duration.zero, 'stagger cannot be negative');
     final Widget box = _enabled ? _box(context) : _plain(context);
     return _RevealScope(
       state: this,
@@ -764,6 +828,10 @@ class _RevealScope extends InheritedWidget {
 /// Where a block remembers it was revealed: the [PageStorageKey]s on it and
 /// around it, as [PageStorage] itself tells blocks apart.
 ///
+/// Only a block with a key of its own remembers: on it, or on a widget between
+/// it and the nearest scrollable, such as the item a list builds around it. A
+/// key on the list or above it is shared by every block in the list.
+///
 /// Kept under an identifier of its own rather than the one [PageStorage] would
 /// work out, which a scrollable inside the block uses for its offset.
 @immutable
@@ -773,17 +841,26 @@ class _RevealMemory {
   final List<PageStorageKey<dynamic>> keys;
 
   /// The memory of the block at [context], `null` without a [PageStorageKey]
-  /// on it or around it.
+  /// of its own.
   static _RevealMemory? of(BuildContext context) {
     final List<PageStorageKey<dynamic>> keys = <PageStorageKey<dynamic>>[];
-    final Key? own = context.widget.key;
-    if (own is PageStorageKey<dynamic>) keys.add(own);
+    final Key? key = context.widget.key;
+    bool own = false;
+    if (key is PageStorageKey<dynamic>) {
+      keys.add(key);
+      own = true;
+    }
+    bool inItem = true;
     context.visitAncestorElements((Element element) {
+      if (element.widget is Scrollable) inItem = false;
       final Key? key = element.widget.key;
-      if (key is PageStorageKey<dynamic>) keys.add(key);
+      if (key is PageStorageKey<dynamic>) {
+        keys.add(key);
+        own = own || inItem;
+      }
       return true;
     });
-    return keys.isEmpty ? null : _RevealMemory(keys);
+    return own ? _RevealMemory(keys) : null;
   }
 
   @override
@@ -797,16 +874,22 @@ class _RevealMemory {
 /// Sorts [items] in reading order by where [contextOf] each is laid out: row
 /// by row, then from the side lines start in [direction]. Items not laid out
 /// yet keep their order, after the others.
+///
+/// Positions are read within [within], an ancestor of every item, or on the
+/// screen when `null`.
 void _sortInReadingOrder<T>(
   List<T> items,
   BuildContext Function(T item) contextOf,
-  TextDirection direction,
-) {
+  TextDirection direction, {
+  RenderObject? within,
+}) {
+  final RenderObject? ancestor =
+      within != null && within.attached ? within : null;
   Rect? rectOf(T item) {
     final RenderObject? box = contextOf(item).findRenderObject();
     if (box is! RenderBox || !box.attached || !box.hasSize) return null;
     return MatrixUtils.transformRect(
-      box.getTransformTo(null),
+      box.getTransformTo(ancestor),
       Offset.zero & box.size,
     );
   }

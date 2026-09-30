@@ -178,5 +178,58 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(scrollPosition(tester, find.byType(Scrollable).at(1)).pixels, 50);
     });
+
+    testWidgets('does not remember by a key on the list itself', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        app(
+          ListView.builder(
+            key: const PageStorageKey<String>('list'),
+            itemCount: 50,
+            itemBuilder: (BuildContext context, int index) => SimpleReveal(
+              fade: null,
+              slide: rise,
+              child: index == 20
+                  ? testBlock
+                  : const SizedBox(width: 100, height: 100),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // The rows before it have been revealed; row 20 has not.
+      await scrollTo(tester, 1700);
+      expect(stillToRiseOf(tester, blockKey), 100);
+    });
+
+    testWidgets('remembers by a key on the item the list builds around it', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        app(
+          ListView.builder(
+            itemCount: 50,
+            itemBuilder: (BuildContext context, int index) => Padding(
+              key: PageStorageKey<int>(index),
+              padding: EdgeInsets.zero,
+              child: SimpleReveal(
+                fade: null,
+                slide: rise,
+                child: index == 0
+                    ? testBlock
+                    : const SizedBox(width: 100, height: 100),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await scrollTo(tester, 3000);
+      await scrollTo(tester, 0);
+      expect(stillToRiseOf(tester, blockKey), 0);
+    });
   });
 }

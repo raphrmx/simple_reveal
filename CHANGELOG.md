@@ -22,7 +22,8 @@
 - `onReveal` and `onHide`.
 - `SimpleRevealGroup`, blocks that come into view together revealed in turn, in reading order.
 - `SimpleRevealDefaults`, the pace of every reveal below it, and a switch to turn them all off.
-- Blocks with a `PageStorageKey` remember they were revealed once a lazy list lets them go.
+- Blocks with a `PageStorageKey`, on them or on the item a list builds around them, remember they
+  were revealed once a lazy list lets them go.
 - Reduced motion followed by default, through `respectReducedMotion`: nothing moves, for any
   effect, part, group, scrub or controller.
 - An example app, one screen per feature, and a travel page putting them together.

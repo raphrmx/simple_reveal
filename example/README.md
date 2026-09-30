@@ -1,5 +1,61 @@
 # simple_reveal_example
 
+Rows from either side, then a section whose pieces follow one another:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:simple_reveal/simple_reveal.dart';
+
+void main() => runApp(const MaterialApp(home: Scaffold(body: Sections())));
+
+class Sections extends StatelessWidget {
+  const Sections({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: <Widget>[
+        for (int i = 0; i < 12; i++)
+          SimpleReveal(
+            slide: i.isEven
+                ? const SlideProperties.fromLeft()
+                : const SlideProperties.fromRight(),
+            child: Card(child: ListTile(title: Text('Row $i'))),
+          ),
+        SimpleReveal(
+          fade: null,
+          stagger: const Duration(milliseconds: 150),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const RevealPart(
+                slide: SlideProperties.fromBottom(30),
+                child: Text('Our story', style: TextStyle(fontSize: 32)),
+              ),
+              const RevealPart(
+                blur: BlurProperties(6),
+                child: Text('Three pieces, one after the other.'),
+              ),
+              RevealPart(
+                zoom: const ZoomProperties(0.6),
+                curve: Curves.easeOutBack,
+                child: FilledButton(
+                  onPressed: () {},
+                  child: const Text('Read more'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+```
+
+## The example app
+
 One app, twelve screens, reachable from a menu: a whole page first, then timed reveals and reveals
 that follow the scroll:
 
@@ -22,9 +78,9 @@ The menu also carries a Reduce motion switch. It stands in for the system settin
 `MediaQuery`, so every screen can be seen the way someone who turned that setting on sees it.
 
 The screens showing one feature each live in [lib/main.dart](lib/main.dart), which opens on a menu
-listing them. pub.dev renders that file on the example tab, which is why they are not split across
-several. The travel page is a composition rather than a feature, with a look of its own, so it has
-its own file, [lib/showcase.dart](lib/showcase.dart), and its photo in `assets/images/`.
+listing them. The travel page is a composition rather than a feature, with a look of its own, so it
+has its own file, [lib/showcase.dart](lib/showcase.dart), and its photo in `assets/images/`.
+The whole app runs in the browser as the [live demo](https://packages.comapps.be/simple_reveal/).
 
 Every screen scrolls on a `SmoothWheel` (in [lib/smooth_wheel.dart](lib/smooth_wheel.dart)), which
 eases each mouse wheel notch in rather than landing it in one step, and lands it at once under

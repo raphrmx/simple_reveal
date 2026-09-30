@@ -170,4 +170,28 @@ void main() {
 
     expect(stillToRise(tester), 50);
   });
+
+  testWidgets('turns from scrubbed to timed and plays', (
+    WidgetTester tester,
+  ) async {
+    Widget page({required bool scrubbed}) => app(
+          listWith(
+            SimpleReveal(
+              fade: null,
+              slide: rise,
+              scrub: scrubbed ? const ScrubProperties() : null,
+              onReveal: () {},
+              child: testBlock,
+            ),
+            top: 100,
+          ),
+        );
+    await tester.pumpWidget(page(scrubbed: true));
+    await tester.pump();
+
+    await tester.pumpWidget(page(scrubbed: false));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(stillToRise(tester), 0);
+  });
 }

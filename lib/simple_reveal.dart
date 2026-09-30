@@ -23,8 +23,8 @@
 ///
 /// Only the painting moves: the layout is left alone, so nothing jumps, and
 /// the content is in the semantics tree from the start. A frame of the reveal
-/// costs one paint and no widget work, and a block in place pushes no layer at
-/// all.
+/// costs one paint of the block and no widget work, and a block in place
+/// pushes no effect layer at all.
 ///
 /// Nothing moves when the platform asks for reduced motion: blocks and parts
 /// are drawn in place, unless `respectReducedMotion` is turned off.

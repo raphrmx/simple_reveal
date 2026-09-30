@@ -226,6 +226,78 @@ void main() {
     expect(left(tester, title), 0);
     expect(tester.hasRunningAnimations, isFalse);
   });
+
+  testWidgets('come in in reading order under a turned block', (
+    WidgetTester tester,
+  ) async {
+    const List<Key> keys = <Key>[Key('first'), Key('second'), Key('third')];
+    await tester.pumpWidget(
+      app(
+        SimpleReveal(
+          fade: null,
+          rotate: const RotateProperties(0.5),
+          stagger: const Duration(milliseconds: 500),
+          duration: const Duration(milliseconds: 100),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[for (final Key key in keys) risingPart(key)],
+          ),
+        ),
+      ),
+    );
+    await startClock(tester);
+    await tester.pump(const Duration(milliseconds: 1100));
+
+    // A second each, half a second apart, in the order they are laid out.
+    expect(stillToRiseOf(tester, keys[0], RevealPart), 0);
+    expect(stillToRiseOf(tester, keys[1], RevealPart), closeTo(40, 1));
+    expect(stillToRiseOf(tester, keys[2], RevealPart), closeTo(90, 1));
+  });
+
+  testWidgets('join a block still waiting its turn after it', (
+    WidgetTester tester,
+  ) async {
+    const Key late = Key('late');
+    bool joined = false;
+    late StateSetter join;
+    await tester.pumpWidget(
+      app(
+        SimpleRevealGroup(
+          interval: const Duration(seconds: 2),
+          child: Column(
+            children: <Widget>[
+              const SimpleReveal(child: SizedBox(width: 50, height: 50)),
+              StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+                  join = setState;
+                  return SimpleReveal(
+                    fade: null,
+                    child: Column(
+                      children: <Widget>[
+                        const SizedBox(width: 50, height: 50),
+                        if (joined) risingPart(late),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    join(() => joined = true);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    // Its block starts at two seconds: the part has not moved yet.
+    expect(stillToRiseOf(tester, late, RevealPart), 100);
+
+    await tester.pump(const Duration(seconds: 2));
+    expect(stillToRiseOf(tester, late, RevealPart), 0);
+  });
 }
 
 class _Part extends StatelessWidget {

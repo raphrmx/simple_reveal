@@ -8,7 +8,9 @@ part of 'simple_reveal.dart';
 /// so a grid that has two columns on a phone and four on a desktop needs
 /// nothing more. A block that comes into view while the ones before it are
 /// still waiting their turn joins the end of the line, so a quick scroll
-/// through a long grid does not set everything off at once.
+/// through a long grid does not set everything off at once. Blocks scrolled
+/// out of sight before their turn leave the line, so the ones in view after a
+/// fling do not wait for those flung past.
 ///
 /// Scrubbed blocks follow the scroll and take no part. Under reduced motion
 /// the blocks are in place anyway, and nothing waits.
@@ -62,9 +64,10 @@ class _SimpleRevealGroupState extends State<SimpleRevealGroup> {
   /// being handled, which is the only time the scheduler has it.
   Duration _seenAt = Duration.zero;
 
-  /// When the last block handed a turn starts, in frame time, and so when
-  /// the next may.
-  Duration _nextTurn = Duration.zero;
+  /// The blocks handed a turn, and when each starts, in frame time: the line
+  /// the blocks seen next join the end of.
+  final Map<_SimpleRevealState, Duration> _line =
+      <_SimpleRevealState, Duration>{};
 
   /// Takes [block] in, to be handed its turn with the others seen in the
   /// same frame.
@@ -98,17 +101,29 @@ class _SimpleRevealGroupState extends State<SimpleRevealGroup> {
       Directionality.maybeOf(context) ?? TextDirection.ltr,
     );
     final Duration now = _seenAt;
-    Duration turn = _nextTurn > now ? _nextTurn : now;
+    // Out of the line: blocks whose turn has come, and blocks gone, hidden
+    // again or out of sight before it did.
+    _line.removeWhere(
+      (_SimpleRevealState block, Duration start) =>
+          start <= now || !block.mounted || !block._started || !block._inSight,
+    );
+    Duration turn = now;
+    for (final Duration start in _line.values) {
+      if (start + widget.interval > turn) turn = start + widget.interval;
+    }
     for (final _SimpleRevealState block in blocks) {
       block._start(turn - now);
+      _line[block] = turn;
       turn += widget.interval;
     }
-    _nextTurn = turn;
   }
 
   @override
-  Widget build(BuildContext context) =>
-      _GroupScope(state: this, child: widget.child);
+  Widget build(BuildContext context) {
+    // Checked here, a const constructor having no way to compare durations.
+    assert(widget.interval >= Duration.zero, 'interval cannot be negative');
+    return _GroupScope(state: this, child: widget.child);
+  }
 }
 
 /// Hands the blocks below a group the group they belong to.

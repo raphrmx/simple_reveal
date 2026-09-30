@@ -1171,7 +1171,7 @@ final List<_Tinted> _tinted = <_Tinted>[
     'OPENING FROM THE MIDDLE, TINTED',
     (Widget child) => SimpleReveal(
       fade: null,
-      wipe: const WipeProperties.fromCenter(),
+      wipe: const WipeProperties.fromPoint(),
       overlay: const OverlayProperties.darken(0.6),
       duration: const Duration(milliseconds: 1000),
       child: child,

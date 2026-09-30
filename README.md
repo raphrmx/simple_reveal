@@ -211,22 +211,37 @@ for a whole app.
   top of a landing page.
 - A block not yet revealed stays in the semantics tree, so a screen reader reads it all the same.
   While nothing of it shows it does not answer taps.
-- In a list built lazily, a block scrolled far away is disposed. Give it a `PageStorageKey` and it
-  comes back in place rather than playing again.
+- In a list built lazily, a block scrolled far away is disposed. Give it a `PageStorageKey`, or
+  give one to the item the list builds around it, and it comes back in place rather than playing
+  again. A key on the list itself is shared by every block in it, so it is not used.
 - On a desktop and in a browser, Flutter lands each wheel notch in one step, and a scrubbed block
   steps with it. The example eases the wheel with a controller of its own, in
   `example/lib/smooth_wheel.dart`; the package leaves the scroll views to you.
+- [simple_parallax](https://pub.dev/packages/simple_parallax) has a `ZoomProperties`, a
+  `BlurProperties` and an `OverlayProperties` of its own. In a file that uses both packages, import
+  one of them with a prefix:
+
+  ```dart
+  import 'package:simple_reveal/simple_reveal.dart' as reveal;
+
+  reveal.SimpleReveal(
+    zoom: const reveal.ZoomProperties(0.8),
+    child: card,
+  );
+  ```
 
 Every parameter is documented in the
 [API reference](https://pub.dev/documentation/simple_reveal/latest/).
 
 ## Performance
 
-A frame of the reveal repaints the block and rebuilds no widget: its content sits in a repaint
-boundary, recorded once, and only the layers of the effects over it change. A block in place
-pushes no effect layer at all, so a page of revealed blocks costs little more than the same page
-without them. A block waiting to be revealed looks at the scroll once per frame at most, and stops
-once revealed. The blur is the one effect worth profiling on an older phone while it runs.
+A frame of the reveal repaints the block alone and rebuilds no widget: while it plays the block
+is a repaint boundary of its own, its content is recorded once, and only the layers of the effects
+over it change. A delay waited out paints nothing. A block in place pushes no effect layer at all,
+so a page of revealed blocks costs little more than the same page without them. A block waiting to
+be revealed looks where it stands once per frame at most, first against the nearest scrollable,
+which is where most are told to be out of view; a still screen costs nothing, and a block stops
+looking once revealed. The blur is the one effect worth profiling on an older phone while it runs.
 
 ## Example
 
