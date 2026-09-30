@@ -49,10 +49,11 @@ void main() {
       expect(look.sigmaAt(1), 0);
     });
 
-    test('is rounded to a quarter of a pixel', () {
-      expect(look.sigmaAt(0.51), 5);
-      expect(look.sigmaAt(0.488), 5.0);
-      expect(look.sigmaAt(0.475), 5.25);
+    test('clears continuously, without steps', () {
+      expect(look.sigmaAt(0.51), closeTo(4.9, 1e-9));
+      expect(look.sigmaAt(0.97), closeTo(0.3, 1e-9));
+      expect(look.sigmaAt(0.999), closeTo(0.01, 1e-9));
+      expect(look.sigmaAt(0.9995), 0);
     });
 
     test('leaves no blur past the end of an overshooting curve', () {

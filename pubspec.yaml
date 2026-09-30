@@ -8,6 +8,16 @@ homepage: https://packages.comapps.be/simple_reveal/
 repository: https://github.com/raphrmx/simple_reveal
 issue_tracker: https://github.com/raphrmx/simple_reveal/issues
 
+screenshots:
+  - description: A landing page opening, its photo settling and its title coming in piece by piece.
+    path: screenshots/page_opening.webp
+  - description: Sections uncovered as they scroll in, a photo opening in a circle beside its text.
+    path: screenshots/sections.webp
+  - description: A grid of cards coming in one after the other, in reading order.
+    path: screenshots/grid.webp
+  - description: A quote turning into place over a photo that eases back with the scroll.
+    path: screenshots/quote.webp
+
 topics:
   - animation
   - scrolling

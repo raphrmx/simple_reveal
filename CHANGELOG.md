@@ -25,4 +25,4 @@
 - Blocks with a `PageStorageKey` remember they were revealed once a lazy list lets them go.
 - Reduced motion followed by default, through `respectReducedMotion`: nothing moves, for any
   effect, part, group, scrub or controller.
-- An example app, one screen per feature.
+- An example app, one screen per feature, and a travel page putting them together.

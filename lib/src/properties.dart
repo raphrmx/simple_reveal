@@ -196,9 +196,7 @@ class ZoomProperties {
 ///
 /// This one is a filter rather than a transform, so it costs more than the
 /// others while it runs: the block is blurred again on every frame of the
-/// reveal. The sigma is rounded to a quarter of a pixel, so the filter is left
-/// alone for changes no one can see, and once the block is in place no filter
-/// is left behind at all.
+/// reveal. Once the block is in place no filter is left behind at all.
 ///
 /// ---
 ///

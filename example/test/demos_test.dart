@@ -4,6 +4,7 @@ import 'package:simple_reveal_example/main.dart';
 
 /// Every screen the menu opens, in the order it lists them.
 const List<String> _entries = <String>[
+  'A travel page',
   'From either side',
   'Every effect',
   'One after the other',

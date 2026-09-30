@@ -4,6 +4,21 @@ Scroll reveal for Flutter, in pure Dart with no dependencies. Blocks fade, slide
 flip, clear or open into place as they come into view, the way the sections of a web page do, and
 the pieces inside them can follow one after the other.
 
+<p>
+  <img src="https://public.comapps.be/packages/simple_reveal/page.webp" alt="A travel page whose photo settles, whose title comes in piece by piece, and whose sections, figures and photos come in as it scrolls" width="640">
+</p>
+<p>
+  <img src="https://public.comapps.be/packages/simple_reveal/sides.webp" alt="Rows coming in from the left, then from the right" width="330">
+  &nbsp;
+  <img src="https://public.comapps.be/packages/simple_reveal/effects.webp" alt="Rows revealed by a zoom, a blur, a flip, a turn and a slide" width="330">
+</p>
+<p>
+  <img src="https://public.comapps.be/packages/simple_reveal/curtains.webp" alt="Photos uncovered by a wipe, a circle, a panel and a tint that clears" width="330">
+  &nbsp;
+  <img src="https://public.comapps.be/packages/simple_reveal/scrub.webp" alt="Rows following the scroll, in on the way down and back out on the way up" width="330">
+</p>
+
+[![Live demo](https://img.shields.io/badge/Live_demo-packages.comapps.be-3c9a70)](https://packages.comapps.be/simple_reveal/)
 [![Pub Version](https://img.shields.io/pub/v/simple_reveal?color=0175C2)](https://pub.dev/packages/simple_reveal)
 [![Build](https://img.shields.io/github/actions/workflow/status/raphrmx/simple_reveal/ci.yml?branch=main&label=build)](https://github.com/raphrmx/simple_reveal/actions/workflows/ci.yml)
 ![Maintainer](https://img.shields.io/badge/Maintainer-Raphael_Vrient-733d90)
@@ -198,6 +213,9 @@ for a whole app.
   While nothing of it shows it does not answer taps.
 - In a list built lazily, a block scrolled far away is disposed. Give it a `PageStorageKey` and it
   comes back in place rather than playing again.
+- On a desktop and in a browser, Flutter lands each wheel notch in one step, and a scrubbed block
+  steps with it. The example eases the wheel with a controller of its own, in
+  `example/lib/smooth_wheel.dart`; the package leaves the scroll views to you.
 
 Every parameter is documented in the
 [API reference](https://pub.dev/documentation/simple_reveal/latest/).

@@ -2,6 +2,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_reveal/simple_reveal.dart';
 
+import 'showcase.dart';
+import 'smooth_wheel.dart';
+
 void main() => runApp(const ExampleApp());
 
 const Color _ink = Color(0xFF14110F);
@@ -123,95 +126,106 @@ class _Menu extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 32, 20, 32),
-          children: <Widget>[
-            const Text(
-              'Simple Reveal',
-              style: TextStyle(
-                fontSize: 34,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -1,
+        child: SmoothWheel(
+          builder: (BuildContext context, ScrollController controller) =>
+              ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(20, 32, 20, 32),
+            children: <Widget>[
+              const Text(
+                'Simple Reveal',
+                style: TextStyle(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -1,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Blocks that come into place as they come into view: faded, '
-              'slid, zoomed, blurred, turned or flipped, on a timer or with '
-              'the scroll.',
-              style: TextStyle(fontSize: 15, color: Color(0x99FFFFFF)),
-            ),
-            const SizedBox(height: 20),
-            const _ReduceMotionSwitch(),
-            const _Section('Played once seen'),
-            _entry(
-              context,
-              'From either side',
-              'One block from the left, the next from the right',
-              const SidesDemo(),
-            ),
-            _entry(
-              context,
-              'Every effect',
-              'Each one on its own, then a few together',
-              const EffectsDemo(),
-            ),
-            _entry(
-              context,
-              'One after the other',
-              'A grid whose cards come in in turn, in reading order',
-              const StaggerDemo(),
-            ),
-            _entry(
-              context,
-              'Pieces one after the other',
-              'A title, a text and a button, each its own way',
-              const PartsDemo(),
-            ),
-            _entry(
-              context,
-              'Tints and curtains',
-              'Clearing a tint, opening a wipe, rising from a line',
-              const TintWipeDemo(),
-            ),
-            _entry(
-              context,
-              'From code',
-              'Revealed on a tap, hidden, played again, counted',
-              const ControllerDemo(),
-            ),
-            _entry(
-              context,
-              'Every time it comes back',
-              'Hidden again once out of sight, played again',
-              const ReplayDemo(),
-            ),
-            _entry(
-              context,
-              'A carousel in a page',
-              'Cards revealed as either one brings them in',
-              const CarouselDemo(),
-            ),
-            _entry(
-              context,
-              'Five hundred rows',
-              'Built one at a time as they scroll in',
-              const BuilderDemo(),
-            ),
-            const _Section('Following the scroll'),
-            _entry(
-              context,
-              'Scrubbed',
-              'As far in as the scroll has brought it',
-              const ScrubDemo(),
-            ),
-            _entry(
-              context,
-              'In and out again',
-              'Revealed on the way up, hidden on the way off',
-              const MirrorDemo(),
-            ),
-          ],
+              const SizedBox(height: 4),
+              const Text(
+                'Blocks that come into place as they come into view: faded, '
+                'slid, zoomed, blurred, turned or flipped, on a timer or with '
+                'the scroll.',
+                style: TextStyle(fontSize: 15, color: Color(0x99FFFFFF)),
+              ),
+              const SizedBox(height: 20),
+              const _ReduceMotionSwitch(),
+              const _Section('Put together'),
+              _entry(
+                context,
+                'A travel page',
+                'A landing page whose sections come in as it scrolls',
+                const ShowcaseDemo(),
+              ),
+              const _Section('Played once seen'),
+              _entry(
+                context,
+                'From either side',
+                'One block from the left, the next from the right',
+                const SidesDemo(),
+              ),
+              _entry(
+                context,
+                'Every effect',
+                'Each one on its own, then a few together',
+                const EffectsDemo(),
+              ),
+              _entry(
+                context,
+                'One after the other',
+                'A grid whose cards come in in turn, in reading order',
+                const StaggerDemo(),
+              ),
+              _entry(
+                context,
+                'Pieces one after the other',
+                'A title, a text and a button, each its own way',
+                const PartsDemo(),
+              ),
+              _entry(
+                context,
+                'Tints and curtains',
+                'Clearing a tint, opening a wipe, rising from a line',
+                const TintWipeDemo(),
+              ),
+              _entry(
+                context,
+                'From code',
+                'Revealed on a tap, hidden, played again, counted',
+                const ControllerDemo(),
+              ),
+              _entry(
+                context,
+                'Every time it comes back',
+                'Hidden again once out of sight, played again',
+                const ReplayDemo(),
+              ),
+              _entry(
+                context,
+                'A carousel in a page',
+                'Cards revealed as either one brings them in',
+                const CarouselDemo(),
+              ),
+              _entry(
+                context,
+                'Five hundred rows',
+                'Built one at a time as they scroll in',
+                const BuilderDemo(),
+              ),
+              const _Section('Following the scroll'),
+              _entry(
+                context,
+                'Scrubbed',
+                'As far in as the scroll has brought it',
+                const ScrubDemo(),
+              ),
+              _entry(
+                context,
+                'In and out again',
+                'Revealed on the way up, hidden on the way off',
+                const MirrorDemo(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -523,22 +537,26 @@ class SidesDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Screen(
       title: 'From either side',
-      child: ListView(
-        children: <Widget>[
-          const _Lead(
-            'Scroll down. Each row waits until a fifth of it is on screen, '
-            'then fades in from its side.',
-          ),
-          const _Gap(),
-          for (int i = 0; i < 14; i++)
-            SimpleReveal(
-              slide: i.isEven
-                  ? const SlideProperties.fromLeft(120)
-                  : const SlideProperties.fromRight(120),
-              child: _Row(_noteAt(i)),
+      child: SmoothWheel(
+        builder: (BuildContext context, ScrollController controller) =>
+            ListView(
+          controller: controller,
+          children: <Widget>[
+            const _Lead(
+              'Scroll down. Each row waits until a fifth of it is on screen, '
+              'then fades in from its side.',
             ),
-          const SizedBox(height: 120),
-        ],
+            const _Gap(),
+            for (int i = 0; i < 14; i++)
+              SimpleReveal(
+                slide: i.isEven
+                    ? const SlideProperties.fromLeft(120)
+                    : const SlideProperties.fromRight(120),
+                child: _Row(_noteAt(i)),
+              ),
+            const SizedBox(height: 120),
+          ],
+        ),
       ),
     );
   }
@@ -651,22 +669,26 @@ class EffectsDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Screen(
       title: 'Every effect',
-      child: ListView(
-        children: <Widget>[
-          const _Lead(
-            'Each row is revealed by the effect it names. Any of them combine, '
-            'as the last row shows.',
-          ),
-          const _Gap(),
-          for (int i = 0; i < _effects.length; i++)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              child: _effects[i].reveal(
-                _Row(_noteAt(i), label: _effects[i].label),
-              ),
+      child: SmoothWheel(
+        builder: (BuildContext context, ScrollController controller) =>
+            ListView(
+          controller: controller,
+          children: <Widget>[
+            const _Lead(
+              'Each row is revealed by the effect it names. Any of them combine, '
+              'as the last row shows.',
             ),
-          const SizedBox(height: 160),
-        ],
+            const _Gap(),
+            for (int i = 0; i < _effects.length; i++)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: _effects[i].reveal(
+                  _Row(_noteAt(i), label: _effects[i].label),
+                ),
+              ),
+            const SizedBox(height: 160),
+          ],
+        ),
       ),
     );
   }
@@ -687,37 +709,41 @@ class StaggerDemo extends StatelessWidget {
           final int columns = (constraints.maxWidth / 260).floor().clamp(2, 4);
           return SimpleRevealGroup(
             interval: const Duration(milliseconds: 120),
-            child: CustomScrollView(
-              slivers: <Widget>[
-                const SliverToBoxAdapter(
-                  child: _Lead(
-                    'A row of cards comes into view at once, and a group has '
-                    'them come in 120 milliseconds apart, in reading order, '
-                    'however many columns the window has room for.',
-                  ),
-                ),
-                const SliverToBoxAdapter(child: _Gap()),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columns,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      mainAxisExtent: 200,
+            child: SmoothWheel(
+              builder: (BuildContext context, ScrollController controller) =>
+                  CustomScrollView(
+                controller: controller,
+                slivers: <Widget>[
+                  const SliverToBoxAdapter(
+                    child: _Lead(
+                      'A row of cards comes into view at once, and a group has '
+                      'them come in 120 milliseconds apart, in reading order, '
+                      'however many columns the window has room for.',
                     ),
-                    delegate: SliverChildBuilderDelegate(
-                      (BuildContext context, int index) => SimpleReveal(
-                        slide: const SlideProperties.fromBottom(48),
-                        zoom: const ZoomProperties(0.92),
-                        child: _Card(_noteAt(index)),
+                  ),
+                  const SliverToBoxAdapter(child: _Gap()),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        mainAxisExtent: 200,
                       ),
-                      childCount: columns * 6,
+                      delegate: SliverChildBuilderDelegate(
+                        (BuildContext context, int index) => SimpleReveal(
+                          slide: const SlideProperties.fromBottom(48),
+                          zoom: const ZoomProperties(0.92),
+                          child: _Card(_noteAt(index)),
+                        ),
+                        childCount: columns * 6,
+                      ),
                     ),
                   ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 120)),
-              ],
+                  const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                ],
+              ),
             ),
           );
         },
@@ -735,22 +761,26 @@ class ReplayDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Screen(
       title: 'Every time it comes back',
-      child: ListView(
-        children: <Widget>[
-          const _Lead(
-            'Scroll down, then back up. A row out of sight is hidden again, '
-            'where no one sees it, and comes in again the next time.',
-          ),
-          const _Gap(),
-          for (int i = 0; i < 14; i++)
-            SimpleReveal(
-              slide: const SlideProperties.fromStart(100),
-              blur: const BlurProperties(6),
-              once: false,
-              child: _Row(_noteAt(i)),
+      child: SmoothWheel(
+        builder: (BuildContext context, ScrollController controller) =>
+            ListView(
+          controller: controller,
+          children: <Widget>[
+            const _Lead(
+              'Scroll down, then back up. A row out of sight is hidden again, '
+              'where no one sees it, and comes in again the next time.',
             ),
-          const SizedBox(height: 120),
-        ],
+            const _Gap(),
+            for (int i = 0; i < 14; i++)
+              SimpleReveal(
+                slide: const SlideProperties.fromStart(100),
+                blur: const BlurProperties(6),
+                once: false,
+                child: _Row(_noteAt(i)),
+              ),
+            const SizedBox(height: 120),
+          ],
+        ),
       ),
     );
   }
@@ -766,38 +796,42 @@ class CarouselDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Screen(
       title: 'A carousel in a page',
-      child: ListView(
-        children: <Widget>[
-          const _Lead(
-            'Scroll the page to bring the row in, then the row to bring more '
-            'cards in. A card has to be seen through both.',
-          ),
-          const _Gap(),
-          SizedBox(
-            height: 240,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              itemCount: 12,
-              itemBuilder: (BuildContext context, int index) => Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 20,
-                ),
-                child: SizedBox(
-                  width: 200,
-                  child: SimpleReveal(
-                    slide: const SlideProperties.fromEnd(60),
-                    zoom: const ZoomProperties(0.9),
-                    threshold: 0.5,
-                    child: _Card(_noteAt(index)),
+      child: SmoothWheel(
+        builder: (BuildContext context, ScrollController controller) =>
+            ListView(
+          controller: controller,
+          children: <Widget>[
+            const _Lead(
+              'Scroll the page to bring the row in, then the row to bring more '
+              'cards in. A card has to be seen through both.',
+            ),
+            const _Gap(),
+            SizedBox(
+              height: 240,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                itemCount: 12,
+                itemBuilder: (BuildContext context, int index) => Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 20,
+                  ),
+                  child: SizedBox(
+                    width: 200,
+                    child: SimpleReveal(
+                      slide: const SlideProperties.fromEnd(60),
+                      zoom: const ZoomProperties(0.9),
+                      threshold: 0.5,
+                      child: _Card(_noteAt(index)),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          SizedBox(height: MediaQuery.sizeOf(context).height),
-        ],
+            SizedBox(height: MediaQuery.sizeOf(context).height),
+          ],
+        ),
       ),
     );
   }
@@ -812,15 +846,19 @@ class BuilderDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Screen(
       title: 'Five hundred rows',
-      child: ListView.builder(
-        padding: const EdgeInsets.only(top: 12),
-        itemCount: 500,
-        itemBuilder: (BuildContext context, int index) => SimpleReveal(
-          // Remembers it was revealed once the list has let it go.
-          key: PageStorageKey<int>(index),
-          slide: const SlideProperties.fromBottom(32),
-          duration: const Duration(milliseconds: 450),
-          child: _Row(_noteAt(index)),
+      child: SmoothWheel(
+        builder: (BuildContext context, ScrollController controller) =>
+            ListView.builder(
+          controller: controller,
+          padding: const EdgeInsets.only(top: 12),
+          itemCount: 500,
+          itemBuilder: (BuildContext context, int index) => SimpleReveal(
+            // Remembers it was revealed once the list has let it go.
+            key: PageStorageKey<int>(index),
+            slide: const SlideProperties.fromBottom(32),
+            duration: const Duration(milliseconds: 450),
+            child: _Row(_noteAt(index)),
+          ),
         ),
       ),
     );
@@ -836,25 +874,29 @@ class ScrubDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Screen(
       title: 'Scrubbed',
-      child: ListView(
-        children: <Widget>[
-          const _Lead(
-            'Scroll slowly, and stop half way. Each row is as far in as the '
-            'scroll has brought it, done once its top is half way up, and runs '
-            'backwards when scrolled back.',
-          ),
-          const _Gap(),
-          for (int i = 0; i < 14; i++)
-            SimpleReveal(
-              slide: i.isEven
-                  ? const SlideProperties.fromLeft(240)
-                  : const SlideProperties.fromRight(240),
-              rotate: RotateProperties(i.isEven ? -0.03 : 0.03),
-              scrub: const ScrubProperties(reach: 0.5),
-              child: _Row(_noteAt(i)),
+      child: SmoothWheel(
+        builder: (BuildContext context, ScrollController controller) =>
+            ListView(
+          controller: controller,
+          children: <Widget>[
+            const _Lead(
+              'Scroll slowly, and stop half way. Each row is as far in as the '
+              'scroll has brought it, done once its top is half way up, and runs '
+              'backwards when scrolled back.',
             ),
-          const SizedBox(height: 240),
-        ],
+            const _Gap(),
+            for (int i = 0; i < 14; i++)
+              SimpleReveal(
+                slide: i.isEven
+                    ? const SlideProperties.fromLeft(240)
+                    : const SlideProperties.fromRight(240),
+                rotate: RotateProperties(i.isEven ? -0.03 : 0.03),
+                scrub: const ScrubProperties(reach: 0.5),
+                child: _Row(_noteAt(i)),
+              ),
+            const SizedBox(height: 240),
+          ],
+        ),
       ),
     );
   }
@@ -869,26 +911,30 @@ class MirrorDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Screen(
       title: 'In and out again',
-      child: ListView(
-        children: <Widget>[
-          const _Lead(
-            'Each row grows and clears as it comes up, holds in the middle, '
-            'and shrinks and softens as it leaves at the top.',
-          ),
-          const _Gap(),
-          for (int i = 0; i < 14; i++)
-            SimpleReveal(
-              zoom: const ZoomProperties(0.7),
-              blur: const BlurProperties(10),
-              scrub: const ScrubProperties(
-                reach: 0.3,
-                mirror: true,
-                curve: Curves.easeOut,
-              ),
-              child: _Row(_noteAt(i)),
+      child: SmoothWheel(
+        builder: (BuildContext context, ScrollController controller) =>
+            ListView(
+          controller: controller,
+          children: <Widget>[
+            const _Lead(
+              'Each row grows and clears as it comes up, holds in the middle, '
+              'and shrinks and softens as it leaves at the top.',
             ),
-          const SizedBox(height: 240),
-        ],
+            const _Gap(),
+            for (int i = 0; i < 14; i++)
+              SimpleReveal(
+                zoom: const ZoomProperties(0.7),
+                blur: const BlurProperties(10),
+                scrub: const ScrubProperties(
+                  reach: 0.3,
+                  mirror: true,
+                  curve: Curves.easeOut,
+                ),
+                child: _Row(_noteAt(i)),
+              ),
+            const SizedBox(height: 240),
+          ],
+        ),
       ),
     );
   }
@@ -994,17 +1040,21 @@ class PartsDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Screen(
       title: 'Pieces one after the other',
-      child: ListView(
-        children: <Widget>[
-          const _Lead(
-            'Each section waits to be seen, then its overline, its title, its '
-            'text and its button come in 150 milliseconds apart, each its own '
-            'way. The button waits a little longer still.',
-          ),
-          const _Gap(),
-          for (int i = 0; i < 6; i++) _Chapter(i),
-          const SizedBox(height: 120),
-        ],
+      child: SmoothWheel(
+        builder: (BuildContext context, ScrollController controller) =>
+            ListView(
+          controller: controller,
+          children: <Widget>[
+            const _Lead(
+              'Each section waits to be seen, then its overline, its title, its '
+              'text and its button come in 150 milliseconds apart, each its own '
+              'way. The button waits a little longer still.',
+            ),
+            const _Gap(),
+            for (int i = 0; i < 6; i++) _Chapter(i),
+            const SizedBox(height: 120),
+          ],
+        ),
       ),
     );
   }
@@ -1138,31 +1188,35 @@ class TintWipeDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Screen(
       title: 'Tints and curtains',
-      child: ListView(
-        children: <Widget>[
-          const _Lead(
-            'A tint keeps to the shape of the card, rounded corners and all, '
-            'and clears as it comes in. A wipe uncovers it from an edge, from '
-            'a point, or from under a panel.',
-          ),
-          const _Gap(),
-          for (int i = 0; i < _tinted.length; i++)
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  child: _tinted[i].reveal(
-                    _Tile(_noteAt(i), _tinted[i].label),
+      child: SmoothWheel(
+        builder: (BuildContext context, ScrollController controller) =>
+            ListView(
+          controller: controller,
+          children: <Widget>[
+            const _Lead(
+              'A tint keeps to the shape of the card, rounded corners and all, '
+              'and clears as it comes in. A wipe uncovers it from an edge, from '
+              'a point, or from under a panel.',
+            ),
+            const _Gap(),
+            for (int i = 0; i < _tinted.length; i++)
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    child: _tinted[i].reveal(
+                      _Tile(_noteAt(i), _tinted[i].label),
+                    ),
                   ),
                 ),
               ),
-            ),
-          const SizedBox(height: 160),
-        ],
+            const SizedBox(height: 160),
+          ],
+        ),
       ),
     );
   }
@@ -1197,73 +1251,77 @@ class _ControllerDemoState extends State<ControllerDemo> {
   Widget build(BuildContext context) {
     return _Screen(
       title: 'From code',
-      child: ListView(
-        padding: const EdgeInsets.only(bottom: 160),
-        children: <Widget>[
-          const _Lead(
-            'The first card waits for its button, wherever it is. The second '
-            'is revealed when seen, hides again once out of sight, and counts '
-            'how often; its buttons hide it and play it again.',
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: <Widget>[
-                FilledButton(
-                  onPressed: _manual.reveal,
-                  child: const Text('Reveal the first'),
-                ),
-                OutlinedButton(
-                  onPressed: _manual.hide,
-                  child: const Text('Hide it'),
-                ),
-              ],
+      child: SmoothWheel(
+        builder: (BuildContext context, ScrollController controller) =>
+            ListView(
+          controller: controller,
+          padding: const EdgeInsets.only(bottom: 160),
+          children: <Widget>[
+            const _Lead(
+              'The first card waits for its button, wherever it is. The second '
+              'is revealed when seen, hides again once out of sight, and counts '
+              'how often; its buttons hide it and play it again.',
             ),
-          ),
-          SimpleReveal(
-            controller: _manual,
-            manual: true,
-            slide: const SlideProperties.fromBottom(40),
-            overlay: const OverlayProperties.lighten(0.8),
-            child: _Row(_noteAt(0), label: 'MANUAL'),
-          ),
-          const _Gap(),
-          ValueListenableBuilder<int>(
-            valueListenable: _views,
-            builder: (BuildContext context, int views, Widget? _) => _Lead(
-              'Seen $views ${views == 1 ? 'time' : 'times'}. Scroll it out '
-              'and back to count again.',
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: <Widget>[
+                  FilledButton(
+                    onPressed: _manual.reveal,
+                    child: const Text('Reveal the first'),
+                  ),
+                  OutlinedButton(
+                    onPressed: _manual.hide,
+                    child: const Text('Hide it'),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: <Widget>[
-                FilledButton(
-                  onPressed: _seen.replay,
-                  child: const Text('Play it again'),
-                ),
-                OutlinedButton(
-                  onPressed: _seen.hide,
-                  child: const Text('Hide it'),
-                ),
-              ],
+            SimpleReveal(
+              controller: _manual,
+              manual: true,
+              slide: const SlideProperties.fromBottom(40),
+              overlay: const OverlayProperties.lighten(0.8),
+              child: _Row(_noteAt(0), label: 'MANUAL'),
             ),
-          ),
-          SimpleReveal(
-            controller: _seen,
-            once: false,
-            flip: const FlipProperties.aroundX(-0.2),
-            duration: const Duration(milliseconds: 800),
-            onReveal: () => _views.value++,
-            child: _Row(_noteAt(1), label: 'COUNTED'),
-          ),
-          SizedBox(height: MediaQuery.sizeOf(context).height),
-        ],
+            const _Gap(),
+            ValueListenableBuilder<int>(
+              valueListenable: _views,
+              builder: (BuildContext context, int views, Widget? _) => _Lead(
+                'Seen $views ${views == 1 ? 'time' : 'times'}. Scroll it out '
+                'and back to count again.',
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: <Widget>[
+                  FilledButton(
+                    onPressed: _seen.replay,
+                    child: const Text('Play it again'),
+                  ),
+                  OutlinedButton(
+                    onPressed: _seen.hide,
+                    child: const Text('Hide it'),
+                  ),
+                ],
+              ),
+            ),
+            SimpleReveal(
+              controller: _seen,
+              once: false,
+              flip: const FlipProperties.aroundX(-0.2),
+              duration: const Duration(milliseconds: 800),
+              onReveal: () => _views.value++,
+              child: _Row(_noteAt(1), label: 'COUNTED'),
+            ),
+            SizedBox(height: MediaQuery.sizeOf(context).height),
+          ],
+        ),
       ),
     );
   }

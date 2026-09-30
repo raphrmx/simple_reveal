@@ -12,9 +12,8 @@ import 'package:flutter/rendering.dart';
 
 import 'properties.dart';
 
-/// Step the blur sigma is rounded to, so the filter is rebuilt only when it
-/// changes visibly.
-const double _blurStep = 0.25;
+/// Sigma under which the blur is left out, no longer changing a pixel.
+const double _blurFloor = 0.01;
 
 /// The effects of one block, and the reading direction a slide from the
 /// start or the end is resolved in.
@@ -74,12 +73,15 @@ class RevealLook {
 
   /// The sigma the block is blurred with, [shown] of the way through its
   /// reveal. `0` when there is nothing left to blur.
+  ///
+  /// Not rounded: a reveal changes the sigma on every frame anyway, and the
+  /// last steps of a rounded one, on the slow end of an easing curve, show as
+  /// the block holding soft for a few frames and then snapping sharp.
   double sigmaAt(double shown) {
     final BlurProperties? blur = this.blur;
     if (blur == null) return 0;
     final double sigma = blur.sigma * (1 - shown);
-    if (sigma <= 0) return 0;
-    return (sigma / _blurStep).roundToDouble() * _blurStep;
+    return sigma < _blurFloor ? 0 : sigma;
   }
 
   /// How strong the [overlay] still is, [shown] of the way through the reveal,
