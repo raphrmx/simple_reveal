@@ -194,4 +194,27 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(stillToRise(tester), 0);
   });
+
+  testWidgets('says it hides a block before revealing it the other way', (
+    WidgetTester tester,
+  ) async {
+    final List<String> calls = <String>[];
+    Widget page({required bool scrubbed}) => app(
+          listWith(
+            SimpleReveal(
+              scrub: scrubbed ? const ScrubProperties() : null,
+              onReveal: () => calls.add('reveal'),
+              onHide: () => calls.add('hide'),
+              child: testBlock,
+            ),
+            top: 0,
+          ),
+        );
+    await tester.pumpWidget(page(scrubbed: false));
+    await tester.pump();
+    await tester.pumpWidget(page(scrubbed: true));
+    await tester.pump();
+
+    expect(calls, <String>['reveal', 'hide', 'reveal']);
+  });
 }

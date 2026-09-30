@@ -58,7 +58,6 @@ class ShowcaseDemo extends StatelessWidget {
                   alignment: Alignment(0.8, -0.5),
                   closer: 1.6,
                   mirrored: true,
-                  wipe: WipeProperties.circle(),
                 ),
                 _Feature(
                   index: 2,
@@ -444,7 +443,9 @@ class _Figure extends StatelessWidget {
   }
 }
 
-/// A photo uncovered by a wipe beside a text whose pieces follow it in.
+/// A photo beside a text: the photo uncovered by a [wipe] and the pieces of
+/// the text following it in, or, without a wipe, the two coming in from
+/// either side of the page.
 class _Feature extends StatelessWidget {
   const _Feature({
     required this.index,
@@ -452,7 +453,7 @@ class _Feature extends StatelessWidget {
     required this.title,
     required this.text,
     required this.alignment,
-    required this.wipe,
+    this.wipe,
     this.closer = 1,
     this.mirrored = false,
   });
@@ -462,76 +463,102 @@ class _Feature extends StatelessWidget {
   final String title;
   final String text;
   final Alignment alignment;
-  final WipeProperties wipe;
+  final WipeProperties? wipe;
   final double closer;
   final bool mirrored;
 
   @override
   Widget build(BuildContext context) {
     final bool wide = _isWide(context);
-    // The text comes in from the side of the photo.
     final bool photoFirst = index.isEven;
+    final WipeProperties? wipe = this.wipe;
+    final Widget image = _Photo(
+      alignment: alignment,
+      mirrored: mirrored,
+      closer: closer,
+      radius: 24,
+    );
+    // From the sides, as far as the photo is wide on a desktop, so the two
+    // come in from the edges of the page rather than from near their place.
+    final double distance = wide ? 360 : 200;
     final Widget photo = SizedBox(
       height: wide ? 380 : 240,
-      child: SimpleReveal(
-        fade: null,
-        wipe: wipe,
-        duration: const Duration(milliseconds: 1100),
-        curve: Curves.easeInOutCubic,
-        child: _Photo(
-          alignment: alignment,
-          mirrored: mirrored,
-          closer: closer,
-          radius: 24,
+      child: wipe == null
+          ? SimpleReveal(
+              slide: photoFirst && wide
+                  ? SlideProperties.fromLeft(distance)
+                  : SlideProperties.fromRight(distance),
+              duration: const Duration(milliseconds: 1000),
+              child: image,
+            )
+          : SimpleReveal(
+              fade: null,
+              wipe: wipe,
+              duration: const Duration(milliseconds: 1100),
+              curve: Curves.easeInOutCubic,
+              child: image,
+            ),
+    );
+    final Widget column = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _piece(
+          wipe,
+          slide: photoFirst || !wide
+              ? const SlideProperties.fromRight(40)
+              : const SlideProperties.fromLeft(40),
+          child: Text(
+            overline,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 3,
+              color: _accent,
+            ),
+          ),
         ),
-      ),
+        const SizedBox(height: 12),
+        _piece(
+          wipe,
+          slide: const SlideProperties.fromBottom(28),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 32,
+              height: 1.15,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.8,
+              color: _ink,
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        _piece(
+          wipe,
+          blur: const BlurProperties(6),
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 16, height: 1.65, color: _muted),
+          ),
+        ),
+      ],
     );
-    final Widget words = SimpleReveal(
-      fade: null,
-      delay: const Duration(milliseconds: 350),
-      stagger: const Duration(milliseconds: 130),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          RevealPart(
-            slide: photoFirst || !wide
-                ? const SlideProperties.fromRight(40)
-                : const SlideProperties.fromLeft(40),
-            child: Text(
-              overline,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 3,
-                color: _accent,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          RevealPart(
-            slide: const SlideProperties.fromBottom(28),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 32,
-                height: 1.15,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.8,
-                color: _ink,
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          RevealPart(
-            blur: const BlurProperties(6),
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 16, height: 1.65, color: _muted),
-            ),
-          ),
-        ],
-      ),
-    );
+    // Beside a wipe the pieces follow the photo in; from the sides the text
+    // comes in whole, from the edge away from the photo.
+    final Widget words = wipe == null
+        ? SimpleReveal(
+            slide: photoFirst && wide
+                ? SlideProperties.fromRight(distance)
+                : SlideProperties.fromLeft(distance),
+            duration: const Duration(milliseconds: 1000),
+            child: column,
+          )
+        : SimpleReveal(
+            fade: null,
+            delay: const Duration(milliseconds: 350),
+            stagger: const Duration(milliseconds: 130),
+            child: column,
+          );
     return _Band(
       top: index == 0 ? 96 : 40,
       bottom: 40,
@@ -551,6 +578,16 @@ class _Feature extends StatelessWidget {
             ),
     );
   }
+
+  /// A piece of the text, coming in on its own beside a [wipe], and with the
+  /// rest of the text otherwise.
+  static Widget _piece(
+    WipeProperties? wipe, {
+    required Widget child,
+    SlideProperties? slide,
+    BlurProperties? blur,
+  }) =>
+      wipe == null ? child : RevealPart(slide: slide, blur: blur, child: child);
 }
 
 /// A grid of cards brought in one after the other, in reading order.

@@ -61,7 +61,7 @@ that follow the scroll:
 
 | Screen | Shows |
 | --- | --- |
-| `ShowcaseDemo` | A travel page put together from all of it: a photo settling, a title in pieces, wiped photos, a group of cards and a scrubbed photo |
+| `ShowcaseDemo` | A travel page put together from all of it: a photo settling, a title in pieces, wiped photos, a section from either side, a group of cards and a scrubbed photo |
 | `SidesDemo` | Rows coming in from the left, then from the right |
 | `EffectsDemo` | Every effect on a row of its own, then a bounce and a combination |
 | `StaggerDemo` | A grid in slivers whose cards come in in turn, through a `SimpleRevealGroup` |

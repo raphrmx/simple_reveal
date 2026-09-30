@@ -2,12 +2,14 @@ part of 'simple_reveal.dart';
 
 /// Reveals, hides and plays a [SimpleReveal] again from code.
 ///
-/// Handed to one block through [SimpleReveal.controller], it drives that
-/// block and its parts: reveal it once its data has loaded, hide it when a tab
+/// Handed to a block through [SimpleReveal.controller], it drives that block
+/// and its parts: reveal it once its data has loaded, hide it when a tab
 /// is left, play it again from a button. With [SimpleReveal.manual], it is the
 /// only thing that reveals the block. It notifies its listeners whenever
 /// [isRevealed] changes, however it changed.
 ///
+/// It drives one block at a time: handed to several, as an [AnimatedSwitcher]
+/// does while one block replaces another, it drives the last one given it.
 /// Until it is handed to a block, and after that block is gone, it does
 /// nothing. Under reduced motion a reveal or a hide asked of it happens at
 /// once rather than over time.
@@ -59,25 +61,10 @@ class RevealController extends ChangeNotifier {
 
   /// Drives [state] from now on.
   ///
-  /// A block that replaces another in the same frame, under a new key for
-  /// instance, is attached before the one it replaces is let go, so the last
-  /// one attached takes over. Two blocks both still there after the frame is
-  /// a mistake, reported then.
-  void _attach(_SimpleRevealState state) {
-    final _SimpleRevealState? before = _state;
-    _state = state;
-    assert(() {
-      if (before != null && before != state) {
-        SchedulerBinding.instance.addPostFrameCallback((Duration _) {
-          assert(
-            !before.mounted || !state.mounted,
-            'A RevealController drives one SimpleReveal at a time.',
-          );
-        });
-      }
-      return true;
-    }());
-  }
+  /// A block that replaces another, under a new key for instance, is
+  /// attached before the one it replaces is let go, so the last one attached
+  /// takes over, and letting the other go leaves it be.
+  void _attach(_SimpleRevealState state) => _state = state;
 
   void _detach(_SimpleRevealState state) {
     if (_state == state) _state = null;

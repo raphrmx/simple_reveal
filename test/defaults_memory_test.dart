@@ -231,5 +231,49 @@ void main() {
       await scrollTo(tester, 0);
       expect(stillToRiseOf(tester, blockKey), 0);
     });
+
+    testWidgets('tells apart two blocks under one key', (
+      WidgetTester tester,
+    ) async {
+      final RevealController second = RevealController();
+      addTearDown(second.dispose);
+      bool shown = true;
+      late StateSetter setPage;
+      await tester.pumpWidget(
+        app(
+          StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              setPage = setState;
+              if (!shown) return const SizedBox();
+              return PageView(
+                children: <Widget>[
+                  Column(
+                    key: const PageStorageKey<String>('page'),
+                    children: <Widget>[
+                      const SimpleReveal(child: testBlock),
+                      SimpleReveal(
+                        controller: second,
+                        manual: true,
+                        child: const SizedBox(width: 100, height: 100),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(second.isRevealed, isFalse);
+
+      // Built again from nothing: the first remembers, the second was never
+      // revealed.
+      setPage(() => shown = false);
+      await tester.pump();
+      setPage(() => shown = true);
+      await tester.pump();
+      expect(second.isRevealed, isFalse);
+    });
   });
 }

@@ -450,9 +450,10 @@ class RenderReveal extends RenderProxyBox {
   /// The transform the child is drawn through as the reveal stands now, `null`
   /// for none.
   ///
-  /// Worked out afresh rather than kept from the last paint: a block waiting
-  /// in the cache extent of a list is laid out but not painted, and a tap or a
-  /// position read from inside it still has to land where it will be drawn.
+  /// Read from the last paint while nothing has moved since, and worked out
+  /// afresh otherwise: a block waiting in the cache extent of a list is laid
+  /// out but not painted, and a tap or a position read from inside it still
+  /// has to land where it will be drawn.
   Matrix4? _transformNow() {
     final double shown = _progress();
     return shown == 1 ? null : _look.transformAt(shown, size);

@@ -153,4 +153,50 @@ void main() {
     expect(controller.isRevealed, isFalse);
     expect(stillToRise(tester), 100);
   });
+
+  testWidgets('copes with a block moved out of its list while in line', (
+    WidgetTester tester,
+  ) async {
+    final GlobalKey moved = GlobalKey();
+    bool listed = true;
+    late StateSetter setPage;
+    Widget blockOf({Key? key}) => SimpleReveal(
+          key: key,
+          fade: null,
+          slide: rise,
+          child: const SizedBox(width: 100, height: 100),
+        );
+    await tester.pumpWidget(
+      app(
+        SimpleRevealGroup(
+          interval: const Duration(seconds: 1),
+          child: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              setPage = setState;
+              return listed
+                  ? ListView(
+                      children: <Widget>[
+                        blockOf(),
+                        blockOf(),
+                        blockOf(key: moved),
+                      ],
+                    )
+                  : Column(
+                      children: <Widget>[blockOf(key: moved), blockOf()],
+                    );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    setPage(() => listed = false);
+    await tester.pump();
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    await tester.pumpAndSettle();
+    expect(tester.hasRunningAnimations, isFalse);
+  });
 }

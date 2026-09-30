@@ -58,6 +58,11 @@ Sight? sightOf(
   // Most blocks still waiting are well outside the nearest scrollable. That is
   // told through a walk up to it alone, shorter than the one to the screen.
   if (scrollables.isNotEmpty) {
+    // A scrollable gone since the block was last built, the block having been
+    // moved out of it: nothing to measure until it is built again.
+    if (scrollables.any((ScrollableState scrollable) => !scrollable.mounted)) {
+      return null;
+    }
     final RenderObject? near = scrollables.first.context.findRenderObject();
     if (near is! RenderBox || !near.attached || !near.hasSize) return null;
     final Rect local = MatrixUtils.transformRect(
@@ -86,10 +91,13 @@ Sight? sightOf(
 }
 
 /// Whether [rect] shares some of [room] on both axes: an overlap on an axis
-/// where it has an extent, lying within [room] on one where it has none.
+/// where it has an extent, lying within [room] on one where it has none. A
+/// room with no extent on an axis, two clipping edges that meet, shows
+/// nothing of a block with one.
 bool _meets(Rect rect, Rect room) {
-  bool along(double start, double end, double from, double to) =>
-      start == end ? start >= from && start <= to : start < to && end > from;
+  bool along(double start, double end, double from, double to) => start == end
+      ? from <= start && start <= to
+      : from < to && start < to && end > from;
   return along(rect.left, rect.right, room.left, room.right) &&
       along(rect.top, rect.bottom, room.top, room.bottom);
 }

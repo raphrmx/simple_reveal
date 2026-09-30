@@ -366,6 +366,11 @@ class _SimpleRevealState extends State<SimpleReveal>
   /// first: turning it on or off changes what its controller reads.
   bool? _enabledBefore;
 
+  /// Whether the block is on a part of the app being shown: not on a hidden
+  /// tab of an [IndexedStack], nor on a page covered by another. Only then is
+  /// it revealed by being in sight, or it would play where no one sees it.
+  bool _onStage = true;
+
   @override
   Duration get _runFor =>
       widget.duration ?? _defaults?.duration ?? _defaultDuration;
@@ -413,6 +418,9 @@ class _SimpleRevealState extends State<SimpleReveal>
     _group = _GroupScope.maybeOf(context);
     final bool wasStill = _still;
     _reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    // TickerMode.valuesOf, which replaces it, is not in Flutter 3.13.
+    // ignore: deprecated_member_use
+    _onStage = TickerMode.of(context) && Visibility.of(context);
     if (!_memoryRead) {
       _memoryRead = true;
       _restore();
@@ -420,6 +428,9 @@ class _SimpleRevealState extends State<SimpleReveal>
     if (_still && !wasStill) _settle();
     _retime();
     _noteEnabled();
+    // Brought on stage, or given something to watch, with nothing moving:
+    // looked at after this frame all the same.
+    _schedule();
   }
 
   @override
@@ -432,21 +443,34 @@ class _SimpleRevealState extends State<SimpleReveal>
     if ((widget.scrub == null) != (oldWidget.scrub == null)) {
       // The two ways of revealing keep their state apart: start again hidden,
       // and let the next look say what the other way makes of it.
+      final bool wasStarted = _started;
       _started = false;
       _held = false;
       _jump(shown: false);
       for (final _RevealPartState part in _parts) {
         part._jump(shown: false);
       }
+      if (wasStarted) {
+        _remember(revealed: false);
+        // After the frame, as a callback may set state, which it cannot while
+        // the tree is being built.
+        SchedulerBinding.instance.addPostFrameCallback((Duration _) {
+          if (mounted) widget.onHide?.call();
+        });
+      }
     }
     _retime();
     if (_still) _settle();
     _noteEnabled();
+    // Turned from manual, or given something to watch, with nothing moving:
+    // looked at after this frame all the same.
+    _schedule();
   }
 
   @override
   void dispose() {
     widget.controller?._detach(this);
+    _group?._line.remove(this);
     super.dispose();
   }
 
@@ -697,7 +721,7 @@ class _SimpleRevealState extends State<SimpleReveal>
         view: _view,
         threshold: _threshold,
       )) {
-        case Sight.shown when !_started && !_held:
+        case Sight.shown when !_started && !_held && _onStage:
           _reveal(bySight: true);
         case Sight.out when _held:
           _held = false;
@@ -712,8 +736,9 @@ class _SimpleRevealState extends State<SimpleReveal>
     // A block still waiting can come into view with no scroll and no paint of
     // its own: on a page sliding in, or as the content above it changes. So
     // it looks again after the next frame, whenever there is one. Waiting for
-    // a frame does not ask for one, so a still screen costs nothing.
-    if (!_started || _held) _schedule();
+    // a frame does not ask for one, and a block off stage does not look until
+    // it is back on.
+    if (_onStage && (!_started || _held)) _schedule();
   }
 
   @override
@@ -830,25 +855,33 @@ class _RevealScope extends InheritedWidget {
 ///
 /// Only a block with a key of its own remembers: on it, or on a widget between
 /// it and the nearest scrollable, such as the item a list builds around it. A
-/// key on the list or above it is shared by every block in the list.
+/// key on the list or above it is shared by every block in the list. Blocks
+/// under the same key are told apart by where each sits below it.
 ///
 /// Kept under an identifier of its own rather than the one [PageStorage] would
 /// work out, which a scrollable inside the block uses for its offset.
 @immutable
 class _RevealMemory {
-  const _RevealMemory(this.keys);
+  const _RevealMemory(this.keys, this.path);
 
   final List<PageStorageKey<dynamic>> keys;
+
+  /// Where the block sits below the key it remembers by: the slot of each
+  /// widget on the way up to it, empty for a key on the block itself.
+  final List<Object?> path;
 
   /// The memory of the block at [context], `null` without a [PageStorageKey]
   /// of its own.
   static _RevealMemory? of(BuildContext context) {
     final List<PageStorageKey<dynamic>> keys = <PageStorageKey<dynamic>>[];
+    final List<Object?> path = <Object?>[];
     final Key? key = context.widget.key;
     bool own = false;
     if (key is PageStorageKey<dynamic>) {
       keys.add(key);
       own = true;
+    } else {
+      path.add(_placeOf(context as Element));
     }
     bool inItem = true;
     context.visitAncestorElements((Element element) {
@@ -857,18 +890,30 @@ class _RevealMemory {
       if (key is PageStorageKey<dynamic>) {
         keys.add(key);
         own = own || inItem;
+      } else if (!own && inItem) {
+        path.add(_placeOf(element));
       }
       return true;
     });
-    return own ? _RevealMemory(keys) : null;
+    return own ? _RevealMemory(keys, path) : null;
+  }
+
+  /// Where [element] sits in its parent, in a form that holds from one build
+  /// to the next: the index among several children.
+  static Object? _placeOf(Element element) {
+    final Object? slot = element.slot;
+    if (slot is IndexedSlot) return slot.index;
+    return slot is Element ? null : slot;
   }
 
   @override
   bool operator ==(Object other) =>
-      other is _RevealMemory && listEquals(other.keys, keys);
+      other is _RevealMemory &&
+      listEquals(other.keys, keys) &&
+      listEquals(other.path, path);
 
   @override
-  int get hashCode => Object.hashAll(keys);
+  int get hashCode => Object.hash(Object.hashAll(keys), Object.hashAll(path));
 }
 
 /// Sorts [items] in reading order by where [contextOf] each is laid out: row

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simple_reveal/simple_reveal.dart';
 
 import 'helpers.dart';
 
@@ -66,5 +67,46 @@ void main() {
     await tester.drag(find.byType(PageView), const Offset(-600, 0));
     await tester.pumpAndSettle();
     expect(stillToRise(tester), 0);
+  });
+
+  testWidgets('does not see a block where two clipping edges meet', (
+    WidgetTester tester,
+  ) async {
+    int reveals = 0;
+    final ScrollController page = ScrollController(initialScrollOffset: 410);
+    addTearDown(page.dispose);
+    await tester.pumpWidget(
+      app(
+        ListView(
+          controller: page,
+          children: <Widget>[
+            SizedBox(
+              height: 300,
+              child: ListView(
+                children: <Widget>[
+                  const SizedBox(height: 250),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: SimpleReveal(
+                      onReveal: () => reveals++,
+                      child: testBlock,
+                    ),
+                  ),
+                  const SizedBox(height: 1000),
+                ],
+              ),
+            ),
+            const SizedBox(height: 3000),
+          ],
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // The inner list ends exactly at the top of the screen, and the block
+    // straddles that edge: none of it can be seen.
+    await scrollTo(tester, 300);
+    await tester.pump();
+    expect(reveals, 0);
   });
 }

@@ -239,9 +239,9 @@ A frame of the reveal repaints the block alone and rebuilds no widget: while it 
 is a repaint boundary of its own, its content is recorded once, and only the layers of the effects
 over it change. A delay waited out paints nothing. A block in place pushes no effect layer at all,
 so a page of revealed blocks costs little more than the same page without them. A block waiting to
-be revealed looks where it stands once per frame at most, first against the nearest scrollable,
-which is where most are told to be out of view; a still screen costs nothing, and a block stops
-looking once revealed. The blur is the one effect worth profiling on an older phone while it runs.
+be revealed looks where it stands once per frame drawn at most, first against the nearest
+scrollable, which is where most are told to be out of view. No frame drawn, no look taken; a block
+on a hidden tab or a covered page does not look at all, and a block stops looking once revealed. The blur is the one effect worth profiling on an older phone while it runs.
 
 ## Example
 

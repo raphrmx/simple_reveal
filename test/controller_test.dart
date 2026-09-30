@@ -245,4 +245,48 @@ void main() {
     expect(controller.isRevealed, isTrue);
     expect(notified, 1);
   });
+
+  testWidgets('follows the block an AnimatedSwitcher brings in', (
+    WidgetTester tester,
+  ) async {
+    Widget page(int key) => app(
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: SimpleReveal(
+              key: ValueKey<int>(key),
+              controller: controller,
+              manual: true,
+              child: Text('block $key'),
+            ),
+          ),
+        );
+    await tester.pumpWidget(page(1));
+    await tester.pumpWidget(page(2));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpAndSettle();
+    controller.reveal();
+    expect(controller.isRevealed, isTrue);
+  });
+
+  testWidgets('lets a block turned from manual be revealed by sight', (
+    WidgetTester tester,
+  ) async {
+    int reveals = 0;
+    Widget page({required bool manual}) => app(
+          SimpleReveal(
+            manual: manual,
+            onReveal: () => reveals++,
+            child: testBlock,
+          ),
+        );
+    await tester.pumpWidget(page(manual: true));
+    await tester.pump();
+    expect(reveals, 0);
+
+    await tester.pumpWidget(page(manual: false));
+    await tester.pump();
+    expect(reveals, 1);
+  });
 }

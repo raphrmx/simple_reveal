@@ -11,7 +11,7 @@ issue_tracker: https://github.com/raphrmx/simple_reveal/issues
 screenshots:
   - description: A landing page opening, its photo settling and its title coming in piece by piece.
     path: screenshots/page_opening.webp
-  - description: Sections uncovered as they scroll in, a photo opening in a circle beside its text.
+  - description: A section coming in from either side of the page, its text from the left and its photo from the right.
     path: screenshots/sections.webp
   - description: A grid of cards coming in one after the other, in reading order.
     path: screenshots/grid.webp
