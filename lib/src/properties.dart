@@ -398,10 +398,14 @@ class ScrubProperties {
   ///
   /// It is measured along the viewport rather than along the crossing of the
   /// block, so a tall block and a short one are done at the same place on
-  /// screen.
+  /// screen. A block the scroll cannot bring that far, near the end of a list,
+  /// is done as the scroll ends instead, so it is never left part way.
   final double reach;
 
   /// Whether the block hides again as it leaves.
+  ///
+  /// A block already within [reach] of the far end when the scroll is at its
+  /// start, at the top of a list, is whole there and hides from there on.
   final bool mirror;
 
   /// How the reveal is eased between the moment the block comes in and

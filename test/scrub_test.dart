@@ -217,4 +217,39 @@ void main() {
 
     expect(calls, <String>['reveal', 'hide', 'reveal']);
   });
+
+  testWidgets('finishes a block the end of the list stops short of its reach', (
+    WidgetTester tester,
+  ) async {
+    // The list ends 100 below the block: scrolled to its end, the block only
+    // comes 400 up a viewport of 600, short of the 300 its reach asks for.
+    await tester.pumpWidget(
+      app(
+        ListView(
+          children: <Widget>[
+            const SizedBox(height: 1000),
+            Align(alignment: Alignment.topLeft, child: scrubbedBlock()),
+            const SizedBox(height: 100),
+          ],
+        ),
+      ),
+    );
+
+    await scrollTo(tester, 500);
+    expect(stillToRise(tester), closeTo(50, 0.01));
+    await scrollTo(tester, 600);
+    expect(stillToRise(tester), 0);
+  });
+
+  testWidgets('shows a mirrored block at the top of a list whole', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(app(listWith(scrubbedBlock(mirror: true), top: 0)));
+    await tester.pump();
+    expect(stillToRise(tester), 0);
+
+    // Hides from there as it leaves, half way when half of it has gone.
+    await scrollTo(tester, 50);
+    expect(stillToRise(tester), closeTo(50, 0.01));
+  });
 }

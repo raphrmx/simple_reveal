@@ -1,5 +1,14 @@
 # SimpleReveal Versions
 
+## 0.1.1
+
+### Fixed
+
+- A scrubbed block that the end of the scroll stops short of its `reach`, the last rows of a list,
+  is done as the scroll ends, rather than left part way.
+- With `mirror`, a scrubbed block already near the far end when the scroll starts, at the top of a
+  list, is whole there rather than part hidden.
+
 ## 0.1.0
 
 ### Added

@@ -117,6 +117,11 @@ Rect _globalRect(RenderBox box) =>
 /// [ScrubProperties.reach] of the way across. With [ScrubProperties.mirror],
 /// it runs backwards as the trailing edge nears the other end.
 ///
+/// Both are held to what the scroll can do: a block the end of the scroll
+/// stops short of [ScrubProperties.reach] is done as the scroll ends, and one
+/// already that close to the far end at the start of the scroll is whole
+/// there, so no block is ever left part way.
+///
 /// The ends are those of the scroll, not of the screen: a reversed list brings
 /// the block in from the top, and a right-to-left one from the left.
 double? scrubOf(
@@ -143,10 +148,28 @@ double? scrubOf(
       ? viewport - start - extent
       : start;
 
+  // How far the scroll can still take the block towards the far end, and
+  // back from it.
+  final bool bounded = position.hasContentDimensions;
+  final double ahead = bounded
+      ? math.max(0.0, position.maxScrollExtent - position.pixels)
+      : double.infinity;
+  final double behind = bounded
+      ? math.max(0.0, position.pixels - position.minScrollExtent)
+      : double.infinity;
+
   final double span = scrub.reach * viewport;
-  double shown = ((viewport - lead) / span).clamp(0.0, 1.0);
+  // Done at the reach, or where the scroll ends if that is short of it.
+  final double coming = viewport - math.max(viewport - span, lead - ahead);
+  double shown = coming > 0 ? ((viewport - lead) / coming).clamp(0.0, 1.0) : 0;
   if (scrub.mirror) {
-    shown = math.min(shown, ((lead + extent) / span).clamp(0.0, 1.0));
+    // Whole until the reach, or from where the scroll starts if that is
+    // already past it.
+    final double going = math.min(span, lead + extent + behind);
+    shown = math.min(
+      shown,
+      going > 0 ? ((lead + extent) / going).clamp(0.0, 1.0) : 0,
+    );
   }
   return scrub.curve.transform(shown);
 }

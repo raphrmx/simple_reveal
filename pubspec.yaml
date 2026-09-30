@@ -3,7 +3,7 @@ description: >-
   Scroll reveal widgets for Flutter, in pure Dart with no dependencies. Blocks
   fade, slide, zoom, blur, turn or flip into place as they come into view, or
   with the scroll.
-version: 0.1.0
+version: 0.1.1
 homepage: https://packages.comapps.be/simple_reveal/
 repository: https://github.com/raphrmx/simple_reveal
 issue_tracker: https://github.com/raphrmx/simple_reveal/issues
