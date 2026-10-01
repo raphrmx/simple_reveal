@@ -56,7 +56,7 @@ class Sections extends StatelessWidget {
 
 ## The example app
 
-One app, twelve screens, reachable from a menu: a whole page first, then timed reveals and reveals
+One app, thirteen screens, reachable from a menu: a whole page first, then timed reveals and reveals
 that follow the scroll:
 
 | Screen | Shows |
@@ -71,6 +71,7 @@ that follow the scroll:
 | `ReplayDemo` | `once: false`, rows played again each time they come back |
 | `CarouselDemo` | Cards in a sideways row inside a page, revealed once both bring them in |
 | `BuilderDemo` | Five hundred rows from `ListView.builder`, remembered through a `PageStorageKey` |
+| `PagesDemo` | Rows fetched page by page as the end of the list comes into view, each page coming in row after row through a `SimpleRevealGroup` |
 | `ScrubDemo` | Rows from either side, as far in as the scroll has brought them |
 | `MirrorDemo` | Rows revealed on the way up and hidden again on the way off |
 

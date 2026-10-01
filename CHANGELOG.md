@@ -1,5 +1,13 @@
 # SimpleReveal Versions
 
+## 0.1.3
+
+### Added
+
+- Lists loaded page by page: a README section on using the package with
+  `infinite_scroll_pagination`, a screen of the example that fetches its rows a page at a time, and
+  tests for a list that grows while in view. No change to the package itself.
+
 ## 0.1.2
 
 ### Changed

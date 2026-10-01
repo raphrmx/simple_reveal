@@ -14,6 +14,7 @@ const List<String> _entries = <String>[
   'Every time it comes back',
   'A carousel in a page',
   'Five hundred rows',
+  'Loaded page by page',
   'Scrubbed',
   'In and out again',
 ];

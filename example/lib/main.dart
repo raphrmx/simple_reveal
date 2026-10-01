@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_reveal/simple_reveal.dart';
@@ -236,6 +238,12 @@ class _Menu extends StatelessWidget {
                 'Five hundred rows',
                 'Built one at a time as they scroll in',
                 const BuilderDemo(),
+              ),
+              _entry(
+                context,
+                'Loaded page by page',
+                'Pages fetched as the end of the list comes into view',
+                const PagesDemo(),
               ),
               const _Section('Following the scroll'),
               _entry(
@@ -911,6 +919,123 @@ class BuilderDemo extends StatelessWidget {
             child: _Row(_noteAt(index)),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Rows fetched page by page as the end of the list comes into view, the way
+/// a paginated feed loads, the rows of each page coming in one after the other.
+class PagesDemo extends StatefulWidget {
+  /// Creates the demo.
+  const PagesDemo({super.key});
+
+  @override
+  State<PagesDemo> createState() => _PagesDemoState();
+}
+
+class _PagesDemoState extends State<PagesDemo> {
+  static const int _pageSize = 10;
+  static const int _lastPage = 6;
+
+  /// How many pages have come back so far.
+  int _pages = 1;
+
+  /// The fetch under way, `null` for none.
+  Timer? _fetch;
+
+  bool get _hasMore => _pages < _lastPage;
+
+  /// Stands in for a call to an API, which answers after a moment.
+  void _fetchNext() {
+    if (_fetch != null || !_hasMore) return;
+    _fetch = Timer(const Duration(milliseconds: 900), () {
+      setState(() {
+        _pages++;
+        _fetch = null;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _fetch?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final int rows = _pages * _pageSize;
+    return _Screen(
+      title: 'Loaded page by page',
+      // The rows of a page come into view together; the group brings them in
+      // one after the other.
+      child: SimpleRevealGroup(
+        interval: const Duration(milliseconds: 90),
+        child: SmoothWheel(
+          builder: (BuildContext context, ScrollController controller) =>
+              ListView.builder(
+            controller: controller,
+            padding: const EdgeInsets.only(bottom: 40),
+            // The lead, the rows, then the end of the list.
+            itemCount: rows + 2,
+            itemBuilder: (BuildContext context, int index) {
+              if (index == 0) {
+                return const _Lead(
+                  'Scroll to the end: the next page is fetched, as from an API, '
+                  'and its rows come in one after the other. A row seen once '
+                  'stays in place when scrolled back to.',
+                );
+              }
+              final int row = index - 1;
+              if (row == rows) {
+                // The end of the list in view asks for the next page.
+                _fetchNext();
+                return _PageEnd(next: _hasMore ? _pages + 1 : null);
+              }
+              return SimpleReveal(
+                // Remembers it was revealed once the list has let it go.
+                key: PageStorageKey<int>(row),
+                slide: const SlideProperties.fromBottom(40),
+                child: _Row(
+                  _noteAt(row),
+                  label: 'PAGE ${row ~/ _pageSize + 1}',
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The end of a list loaded page by page: the page on its way, or the last.
+class _PageEnd extends StatelessWidget {
+  const _PageEnd({required this.next});
+
+  /// The page being fetched, `null` once there are no more.
+  final int? next;
+
+  @override
+  Widget build(BuildContext context) {
+    final int? next = this.next;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 28),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(
+            next == null ? Icons.done : Icons.hourglass_bottom,
+            size: 18,
+            color: const Color(0x99FFFFFF),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            next == null ? 'That was the last page' : 'Fetching page $next...',
+            style: const TextStyle(fontSize: 14, color: Color(0x99FFFFFF)),
+          ),
+        ],
       ),
     );
   }

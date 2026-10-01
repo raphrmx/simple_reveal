@@ -200,6 +200,37 @@ follow the scroll, and a reveal or a hide asked of a controller happens at once.
 on a block to keep its reveal regardless; `SimpleRevealDefaults` deliberately cannot turn it off
 for a whole app.
 
+## Lists loaded page by page
+
+simple_reveal loads no data: it works with whatever fills the list. With
+[infinite_scroll_pagination](https://pub.dev/packages/infinite_scroll_pagination), wrap each item
+in a `SimpleReveal`:
+
+```dart
+SimpleRevealGroup(
+  child: PagingListener<int, Article>(
+    controller: pagingController,
+    builder: (context, state, fetchNextPage) => PagedListView<int, Article>(
+      state: state,
+      fetchNextPage: fetchNextPage,
+      builderDelegate: PagedChildBuilderDelegate<Article>(
+        itemBuilder: (context, article, index) => SimpleReveal(
+          key: PageStorageKey<int>(article.id),
+          slide: const SlideProperties.fromBottom(40),
+          child: ArticleTile(article),
+        ),
+      ),
+    ),
+  ),
+);
+```
+
+- The rows of a page that arrives in view are revealed as it does, with no scroll needed.
+- The group brings them in one after the other, in reading order, a grid included.
+- The `PageStorageKey` keeps a row seen once in place when the list builds it again.
+
+The same goes for any list that grows, a `ListView.builder` fed by a Bloc, a provider or a stream.
+
 ## Good to know
 
 - Only the painting moves. The block keeps its place in the layout from the first frame, so
