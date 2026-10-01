@@ -18,7 +18,7 @@ the pieces inside them can follow one after the other.
   <img src="https://public.comapps.be/packages/simple_reveal/scrub.webp" alt="Rows following the scroll, in on the way down and back out on the way up" width="330">
 </p>
 
-[![Video tour](https://img.shields.io/badge/Video-Guided_tour-c4302b?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=R6WN2rQ6o50)
+[![Video tour](https://img.shields.io/badge/Video-Guided_tour-c4302b?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=2sto2A79fSE)
 [![Live demo](https://img.shields.io/badge/Live_demo-packages.comapps.be-3c9a70)](https://packages.comapps.be/simple_reveal/)
 [![Pub Version](https://img.shields.io/pub/v/simple_reveal?color=0175C2)](https://pub.dev/packages/simple_reveal)
 [![Build](https://img.shields.io/github/actions/workflow/status/raphrmx/simple_reveal/ci.yml?branch=main&label=build)](https://github.com/raphrmx/simple_reveal/actions/workflows/ci.yml)

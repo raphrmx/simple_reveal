@@ -1,5 +1,13 @@
 # SimpleReveal Versions
 
+## 0.1.2
+
+### Changed
+
+- No change to the package itself.
+- The pub.dev screenshots open on a cover.
+- The README links to the new video tour.
+
 ## 0.1.1
 
 ### Fixed
