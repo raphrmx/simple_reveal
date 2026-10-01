@@ -8,6 +8,10 @@
   is done as the scroll ends, rather than left part way.
 - With `mirror`, a scrubbed block already near the far end when the scroll starts, at the top of a
   list, is whole there rather than part hidden.
+- The panel of a wipe given a `color` keeps to what the block draws, as the tint of an overlay
+  does, rather than covering its whole rectangle: a picture with rounded corners comes out from
+  under a panel with the same corners. The panel now fades with the block; leave the fade out for
+  a panel at full strength from the start.
 
 ## 0.1.0
 

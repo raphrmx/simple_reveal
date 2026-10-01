@@ -535,9 +535,11 @@ enum WipeFrom {
 /// combines with a slide or a zoom.
 ///
 /// Given a [color], the part not uncovered yet is painted in it, so the block
-/// comes out from under a panel. The panel is the rectangle of the block, and
-/// it is drawn at full strength whatever the fade, which is what a panel over
-/// a picture wants.
+/// comes out from under a panel. The panel keeps to what the block draws, as
+/// the tint of an [OverlayProperties] does: a picture with rounded corners
+/// comes out from under a panel with the same corners, and the panel fades
+/// with the block. Leave the fade out, `fade: null`, for a panel at full
+/// strength from the start.
 ///
 /// ---
 ///

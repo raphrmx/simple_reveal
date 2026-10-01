@@ -87,7 +87,7 @@ SimpleReveal(
 | `rotate` | Turned in the plane of the screen, in turns. |
 | `flip` | Turned in depth, in perspective: `.aroundX` like a flap, `.aroundY` like a door. |
 | `overlay` | Tinted: `.darken`, `.lighten`, a colour or a `.gradient`, clearing as it comes in. The tint keeps to what the block draws, rounded corners and text included. |
-| `wipe` | Covered, then uncovered from an edge, from a point as a rectangle, or as a `.circle`. Given a `color`, it comes out from under a panel. |
+| `wipe` | Covered, then uncovered from an edge, from a point as a rectangle, or as a `.circle`. Given a `color`, it comes out from under a panel, which keeps to its shape as a tint does. |
 
 `zoom`, `rotate` and `flip` turn about an `alignment`, the middle of the block by default.
 `clipBehavior: Clip.hardEdge` keeps the block within its bounds while it comes in, so a title

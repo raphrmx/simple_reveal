@@ -7,18 +7,31 @@ import 'smooth_wheel.dart';
 
 void main() => runApp(const ExampleApp());
 
-const Color _ink = Color(0xFF14110F);
-const Color _card = Color(0xF7FCFAF8);
-const Color _dusk = Color(0xFF241C18);
-const Color _muted = Color(0xFF6B635C);
+const Color _paper = Color(0xFFF6F1EA);
+const Color _sand = Color(0xFFEDE4D8);
+const Color _white = Color(0xFFFFFDFB);
+const Color _ink = Color(0xFF1D1712);
+const Color _muted = Color(0xFF6F665E);
+const Color _accent = Color(0xFFD9692E);
+
+const String _photo = 'assets/images/trail.webp';
+
+/// The soft shadow under every card.
+const List<BoxShadow> _shadow = <BoxShadow>[
+  BoxShadow(color: Color(0x1F3B2A1A), blurRadius: 24, offset: Offset(0, 10)),
+];
 
 /// One entry of the content revealed, the same copy on every screen.
 class _Note {
-  const _Note(this.dot, this.title, this.detail);
+  const _Note(this.dot, this.title, this.detail, this.crop, this.closer);
 
   final Color dot;
   final String title;
   final String detail;
+
+  /// The part of the photo its picture shows, and how close.
+  final Alignment crop;
+  final double closer;
 }
 
 const List<_Note> _notes = <_Note>[
@@ -26,36 +39,50 @@ const List<_Note> _notes = <_Note>[
     Color(0xFF2F6FED),
     'Coastal ridge',
     'Eleven kilometres, four hours, no shade after the pass.',
+    Alignment(-0.8, 0.3),
+    2.2,
   ),
   _Note(
     Color(0xFFE0446B),
     'Trail notes',
     'Water at the refuge only. The upper section stays icy.',
+    Alignment(0.7, -0.6),
+    2,
   ),
   _Note(
     Color(0xFF2FA36B),
     'Gear list',
     'Poles, two litres, a shell. Leave the rope behind.',
+    Alignment(0, 0.9),
+    2.4,
   ),
   _Note(
-    Color(0xFFEBB53C),
+    Color(0xFFD99A1E),
     'Weather',
     'Clear until the afternoon, then wind from the south.',
+    Alignment(0.4, -0.9),
+    1.8,
   ),
   _Note(
     Color(0xFF7A5AF0),
     'Getting there',
     'Bus at 6.40 from the village, last one back at 19.10.',
+    Alignment(0.9, 0.6),
+    2.6,
   ),
   _Note(
     Color(0xFFE8734A),
     'Permits',
     'None needed below the col. The reserve asks for one.',
+    Alignment(-0.5, -0.4),
+    1.7,
   ),
   _Note(
-    Color(0xFF3FB6C4),
+    Color(0xFF2FA0AE),
     'Signal',
     'Patchy along the ridge, nothing at all in the valley.',
+    Alignment(0.2, 0.3),
+    2,
   ),
 ];
 
@@ -79,10 +106,9 @@ class ExampleApp extends StatelessWidget {
       scrollBehavior: const _DragScrollBehavior(),
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFE07A3F),
-          brightness: Brightness.dark,
+          seedColor: _accent,
         ),
-        scaffoldBackgroundColor: _dusk,
+        scaffoldBackgroundColor: _paper,
         useMaterial3: true,
       ),
       // The switch on the menu reaches the demos the way the platform would,
@@ -145,7 +171,7 @@ class _Menu extends StatelessWidget {
                 'Blocks that come into place as they come into view: faded, '
                 'slid, zoomed, blurred, turned or flipped, on a timer or with '
                 'the scroll.',
-                style: TextStyle(fontSize: 15, color: Color(0x99FFFFFF)),
+                style: TextStyle(fontSize: 15, height: 1.5, color: _muted),
               ),
               const SizedBox(height: 20),
               const _ReduceMotionSwitch(),
@@ -240,8 +266,10 @@ class _Menu extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: const Color(0x14FFFFFF),
+        color: _white,
         borderRadius: BorderRadius.circular(14),
+        elevation: 2,
+        shadowColor: const Color(0x403B2A1A),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: () => Navigator.of(context).push(
@@ -267,13 +295,13 @@ class _Menu extends StatelessWidget {
                         detail,
                         style: const TextStyle(
                           fontSize: 13,
-                          color: Color(0x99FFFFFF),
+                          color: _muted,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: Color(0x66FFFFFF)),
+                const Icon(Icons.chevron_right, color: _accent),
               ],
             ),
           ),
@@ -297,9 +325,9 @@ class _Section extends StatelessWidget {
         label.toUpperCase(),
         style: const TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           letterSpacing: 2.4,
-          color: Color(0x99FFFFFF),
+          color: _accent,
         ),
       ),
     );
@@ -313,8 +341,10 @@ class _ReduceMotionSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0x14FFFFFF),
+      color: _white,
       borderRadius: BorderRadius.circular(14),
+      elevation: 2,
+      shadowColor: const Color(0x403B2A1A),
       clipBehavior: Clip.antiAlias,
       child: ValueListenableBuilder<bool>(
         valueListenable: _reduceMotion,
@@ -330,7 +360,7 @@ class _ReduceMotionSwitch extends StatelessWidget {
           subtitle: const Text(
             'What the demos look like with the system setting on: every '
             'block is simply in place.',
-            style: TextStyle(fontSize: 13, color: Color(0x99FFFFFF)),
+            style: TextStyle(fontSize: 13, color: _muted),
           ),
         ),
       ),
@@ -349,8 +379,13 @@ class _Screen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
-        backgroundColor: _dusk,
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w700, color: _ink),
+        ),
+        backgroundColor: _sand,
+        foregroundColor: _ink,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -376,7 +411,7 @@ class _Lead extends StatelessWidget {
         style: const TextStyle(
           fontSize: 15,
           height: 1.5,
-          color: Color(0xB3FFFFFF),
+          color: _muted,
         ),
       ),
     );
@@ -393,7 +428,39 @@ class _Gap extends StatelessWidget {
       SizedBox(height: MediaQuery.sizeOf(context).height * 0.6);
 }
 
-/// A note as a row, inset from the edges of the page.
+/// A crop of the trail photo, filling its box.
+class _Photo extends StatelessWidget {
+  const _Photo(this.note, {this.radius = 12, this.wider = 1});
+
+  final _Note note;
+  final double radius;
+
+  /// How much more of the photo it shows than the note's own crop.
+  final double wider;
+
+  @override
+  Widget build(BuildContext context) {
+    final double closer = note.closer / wider;
+    Widget image = Image.asset(
+      _photo,
+      fit: BoxFit.cover,
+      alignment: note.crop,
+      width: double.infinity,
+      height: double.infinity,
+    );
+    if (closer > 1) {
+      image =
+          Transform.scale(scale: closer, alignment: note.crop, child: image);
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: image,
+    );
+  }
+}
+
+/// A note as a row, inset from the edges of the page: its picture, then a tag
+/// naming what the row shows, its title and its line.
 class _Row extends StatelessWidget {
   const _Row(this.note, {this.label});
 
@@ -410,29 +477,16 @@ class _Row extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 560),
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 9),
-          padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: _card,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x33000000),
-                blurRadius: 18,
-                offset: Offset(0, 6),
-              ),
-            ],
+            color: _white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: _shadow,
           ),
           child: Row(
             children: <Widget>[
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: note.dot,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 16),
+              SizedBox(width: 92, height: 68, child: _Photo(note)),
+              const SizedBox(width: 18),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,7 +496,7 @@ class _Row extends StatelessWidget {
                         label,
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
                           letterSpacing: 1.6,
                           color: note.dot,
                         ),
@@ -452,9 +506,9 @@ class _Row extends StatelessWidget {
                     Text(
                       note.title,
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.2,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
                         color: _ink,
                       ),
                     ),
@@ -474,7 +528,8 @@ class _Row extends StatelessWidget {
   }
 }
 
-/// A note as a card, for grids and carousels.
+/// A note as a card, for grids and carousels: its picture over its title and
+/// its line.
 class _Card extends StatelessWidget {
   const _Card(this.note);
 
@@ -484,42 +539,38 @@ class _Card extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 200,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: _card,
+        color: _white,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 18,
-            offset: Offset(0, 6),
-          ),
-        ],
+        boxShadow: _shadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Container(
-            width: 14,
-            height: 14,
-            decoration: BoxDecoration(color: note.dot, shape: BoxShape.circle),
-          ),
-          const Spacer(),
-          Text(
-            note.title,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.2,
-              color: _ink,
+          Expanded(child: _Photo(note)),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              note.title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+                color: _ink,
+              ),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            note.detail,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 13, height: 1.45, color: _muted),
+          const SizedBox(height: 3),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(6, 0, 6, 4),
+            child: Text(
+              note.detail,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, height: 1.4, color: _muted),
+            ),
           ),
         ],
       ),
@@ -1039,8 +1090,9 @@ class _Chapter extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: _card,
+              color: _white,
               borderRadius: BorderRadius.circular(20),
+              boxShadow: _shadow,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1150,38 +1202,50 @@ class _Tile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      height: 180,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[note.dot, _noteAt(_notes.indexOf(note) + 1).dot],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.end,
+      height: 190,
+      child: Stack(
+        fit: StackFit.expand,
         children: <Widget>[
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2,
-              color: Color(0xCCFFFFFF),
+          _Photo(note, radius: 22, wider: 1.6),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: <Color>[Color(0x00000000), Color(0x99000000)],
+                stops: <double>[0.4, 1],
+              ),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            note.title,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFFFFFFFF),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                    color: Color(0xE6FFFFFF),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  note.title,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                    color: Color(0xFFFFFFFF),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

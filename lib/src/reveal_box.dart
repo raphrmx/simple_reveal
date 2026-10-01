@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
@@ -72,9 +73,9 @@ class RevealBox extends SingleChildRenderObjectWidget {
 ///
 /// In place, which is where a block spends nearly all its life, it paints its
 /// child as it stands and pushes no layer at all. Part way, it pushes, from the
-/// outside in, a clip to its bounds, a transform, the opening of a wipe, an
-/// opacity, a tint and a blur, each only when it changes something, and paints
-/// the panel of a wipe over what is not uncovered yet.
+/// outside in, a clip to its bounds, a transform, the opening of a wipe or the
+/// panel over what it has not uncovered yet, an opacity, a tint and a blur,
+/// each only when it changes something.
 ///
 /// While a reveal runs on a clock, the box is a repaint boundary of its own, so
 /// a frame of it paints this box alone rather than everything up to the
@@ -227,6 +228,10 @@ class RenderReveal extends RenderProxyBox {
       LayerHandle<ColorFilterLayer>();
   final LayerHandle<ShaderMaskLayer> _gradientTintLayer =
       LayerHandle<ShaderMaskLayer>();
+  final LayerHandle<ShaderMaskLayer> _panelAcrossLayer =
+      LayerHandle<ShaderMaskLayer>();
+  final LayerHandle<ShaderMaskLayer> _panelDownLayer =
+      LayerHandle<ShaderMaskLayer>();
   final LayerHandle<ImageFilterLayer> _filterLayer =
       LayerHandle<ImageFilterLayer>();
 
@@ -260,12 +265,18 @@ class RenderReveal extends RenderProxyBox {
   }
 
   void _clearInner() {
-    _openingLayer.layer = null;
-    _roundOpeningLayer.layer = null;
+    _clearOpening();
     _opacityLayer.layer = null;
     _tintLayer.layer = null;
     _gradientTintLayer.layer = null;
     _filterLayer.layer = null;
+  }
+
+  void _clearOpening() {
+    _openingLayer.layer = null;
+    _roundOpeningLayer.layer = null;
+    _panelAcrossLayer.layer = null;
+    _panelDownLayer.layer = null;
   }
 
   /// Whether the content itself shows, [shown] of the way through: at an
@@ -335,18 +346,24 @@ class RenderReveal extends RenderProxyBox {
     }
   }
 
-  /// The content through the opening of the wipe, and the panel over what the
-  /// opening has not uncovered yet.
+  /// The content through the opening of the wipe, or under its panel where the
+  /// opening has not reached yet.
   void _paintOpened(PaintingContext context, Offset offset) {
     final Rect? opening = _opening;
-    if (_alpha == 0 || !_isOpen(opening)) {
+    final Color? panel = _look.wipe?.color;
+    if (_alpha == 0 || (panel == null && !_isOpen(opening))) {
       _clearInner();
     } else if (opening == null) {
+      _clearOpening();
+      _paintFaded(context, offset);
+    } else if (panel != null) {
       _openingLayer.layer = null;
       _roundOpeningLayer.layer = null;
-      _paintFaded(context, offset);
+      _paintPanelled(context, offset, opening, panel);
     } else if (_look.roundOpening) {
       _openingLayer.layer = null;
+      _panelAcrossLayer.layer = null;
+      _panelDownLayer.layer = null;
       _roundOpeningLayer.layer = context.pushClipPath(
         needsCompositing,
         offset,
@@ -357,6 +374,8 @@ class RenderReveal extends RenderProxyBox {
       );
     } else {
       _roundOpeningLayer.layer = null;
+      _panelAcrossLayer.layer = null;
+      _panelDownLayer.layer = null;
       _openingLayer.layer = context.pushClipRect(
         needsCompositing,
         offset,
@@ -365,18 +384,112 @@ class RenderReveal extends RenderProxyBox {
         oldLayer: _openingLayer.layer,
       );
     }
+  }
 
-    final Color? panel = _look.wipe?.color;
-    if (panel == null || opening == null) return;
-    final Path covered = Path()
-      ..fillType = PathFillType.evenOdd
-      ..addRect(offset & size);
+  /// The whole content, with what lies outside [opening] painted over in
+  /// [panel]. Blended onto what the content draws, as the tint is, so the
+  /// panel keeps to its shape: rounded corners, text, and its fade.
+  ///
+  /// A shader with hard stops does it, in the layer the gradient tint uses: a
+  /// radial one around a round opening, and for a rectangle, one across for
+  /// the columns either side of it and one down for the rows above and below.
+  void _paintPanelled(
+    PaintingContext context,
+    Offset offset,
+    Rect opening,
+    Color panel,
+  ) {
+    final Color clear = panel.withAlpha(0);
     if (_look.roundOpening) {
-      covered.addOval(opening.shift(offset));
-    } else {
-      covered.addRect(opening.shift(offset));
+      _panelDownLayer.layer = null;
+      final Offset center = opening.center;
+      double reach = 1;
+      for (final Offset corner in <Offset>[
+        Offset.zero,
+        size.topRight(Offset.zero),
+        size.bottomLeft(Offset.zero),
+        size.bottomRight(Offset.zero),
+      ]) {
+        reach = math.max(reach, (corner - center).distance);
+      }
+      final double hole = (opening.width / 2 / reach).clamp(0.0, 1.0);
+      _pushPanel(
+        _panelAcrossLayer,
+        context,
+        offset,
+        ui.Gradient.radial(
+          center,
+          reach,
+          <Color>[clear, clear, panel, panel],
+          <double>[0, hole, hole, 1],
+        ),
+        _paintFaded,
+      );
+      return;
     }
-    context.canvas.drawPath(covered, Paint()..color = panel);
+
+    final double left = (opening.left / size.width).clamp(0.0, 1.0);
+    final double right = (opening.right / size.width).clamp(left, 1.0);
+    final double top = (opening.top / size.height).clamp(0.0, 1.0);
+    final double bottom = (opening.bottom / size.height).clamp(top, 1.0);
+    final List<Color> colors = <Color>[
+      panel,
+      panel,
+      clear,
+      clear,
+      panel,
+      panel,
+    ];
+
+    PaintingContextCallback inner = _paintFaded;
+    if (top > 0 || bottom < 1) {
+      inner = (PaintingContext context, Offset offset) => _pushPanel(
+            _panelDownLayer,
+            context,
+            offset,
+            ui.Gradient.linear(
+              Offset.zero,
+              Offset(0, size.height),
+              colors,
+              <double>[0, top, top, bottom, bottom, 1],
+            ),
+            _paintFaded,
+          );
+    } else {
+      _panelDownLayer.layer = null;
+    }
+    if (left > 0 || right < 1) {
+      _pushPanel(
+        _panelAcrossLayer,
+        context,
+        offset,
+        ui.Gradient.linear(
+          Offset.zero,
+          Offset(size.width, 0),
+          colors,
+          <double>[0, left, left, right, right, 1],
+        ),
+        inner,
+      );
+    } else {
+      _panelAcrossLayer.layer = null;
+      inner(context, offset);
+    }
+  }
+
+  void _pushPanel(
+    LayerHandle<ShaderMaskLayer> handle,
+    PaintingContext context,
+    Offset offset,
+    Shader shader,
+    PaintingContextCallback painter,
+  ) {
+    final ShaderMaskLayer mask = handle.layer ??= ShaderMaskLayer();
+    mask
+      ..shader = shader
+      ..maskRect = offset & size
+      ..blendMode = BlendMode.srcATop;
+    context.pushLayer(mask, painter, offset);
   }
 
   void _paintFaded(PaintingContext context, Offset offset) {

@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -151,6 +154,124 @@ void main() {
         const WipeProperties.fromLeft(color: Colors.black),
       );
       expect(look.drawsAt(0, size), isTrue);
+    });
+
+    test('fades its panel with the block', () {
+      const RevealLook look = RevealLook(
+        direction: TextDirection.ltr,
+        fade: FadeProperties(),
+        wipe: WipeProperties.fromLeft(color: Colors.black),
+      );
+      expect(look.drawsAt(0, size), isFalse);
+      expect(look.drawsAt(0.1, size), isTrue);
+    });
+
+    testWidgets('keeps its panel to what the block draws', (
+      WidgetTester tester,
+    ) async {
+      const Key frame = Key('frame');
+      await tester.pumpWidget(
+        app(
+          listWith(
+            const RepaintBoundary(
+              key: frame,
+              child: SimpleReveal(
+                fade: null,
+                wipe: WipeProperties.fromLeft(color: Color(0xFF0000FF)),
+                duration: Duration(seconds: 1),
+                curve: Curves.linear,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.all(Radius.circular(30)),
+                  child: SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: ColoredBox(color: Color(0xFFFF0000)),
+                  ),
+                ),
+              ),
+            ),
+            top: 0,
+          ),
+        ),
+      );
+      await startClock(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      // The content is drawn whole, not clipped to the opening.
+      expect(
+        tester.layers.whereType<ClipRectLayer>().where(
+              (ClipRectLayer layer) => layer.clipRect!.width == 30,
+            ),
+        isEmpty,
+      );
+
+      final Element element = tester.element(find.byKey(frame));
+      final List<int> corner = <int>[];
+      final List<int> covered = <int>[];
+      final List<int> open = <int>[];
+      await tester.runAsync(() async {
+        final ui.Image image = await captureImage(element);
+        final ByteData bytes = (await image.toByteData())!;
+        List<int> pixel(int x, int y) {
+          final int at = (y * image.width + x) * 4;
+          return <int>[for (int i = 0; i < 4; i++) bytes.getUint8(at + i)];
+        }
+
+        corner.addAll(pixel(98, 2));
+        covered.addAll(pixel(80, 50));
+        open.addAll(pixel(10, 50));
+        image.dispose();
+      });
+      // Past the rounded corner nothing is drawn, panel included.
+      expect(corner[3], 0);
+      expect(covered, <int>[0, 0, 255, 255]);
+      expect(open, <int>[255, 0, 0, 255]);
+
+      await tester.pumpAndSettle();
+      expect(tester.layers.whereType<ShaderMaskLayer>(), isEmpty);
+    });
+
+    testWidgets('masks a panel across and down around a point', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        app(
+          listWith(
+            const SimpleReveal(
+              fade: null,
+              wipe: WipeProperties.fromPoint(color: Colors.black),
+              child: testBlock,
+            ),
+            top: 0,
+          ),
+        ),
+      );
+      await startClock(tester);
+      await tester.pump(const Duration(milliseconds: 100));
+      final Iterable<ShaderMaskLayer> masks =
+          tester.layers.whereType<ShaderMaskLayer>();
+      expect(masks, hasLength(2));
+      for (final ShaderMaskLayer mask in masks) {
+        expect(mask.blendMode, BlendMode.srcATop);
+      }
+    });
+
+    testWidgets('masks a panel around a circle', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        app(
+          listWith(
+            const SimpleReveal(
+              fade: null,
+              wipe: WipeProperties.circle(color: Colors.black),
+              child: testBlock,
+            ),
+            top: 0,
+          ),
+        ),
+      );
+      await startClock(tester);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.layers.whereType<ShaderMaskLayer>(), hasLength(1));
+      expect(tester.layers.whereType<ClipPathLayer>(), isEmpty);
     });
 
     testWidgets('clips the block to the opening, then lets it be', (

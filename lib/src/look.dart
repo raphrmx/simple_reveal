@@ -162,10 +162,11 @@ class RevealLook {
   }
 
   /// Whether anything of the block is drawn, [shown] of the way through its
-  /// reveal, for a block of [size]: its content, or the panel of its wipe.
+  /// reveal, for a block of [size]: its content, or the panel of its wipe,
+  /// which keeps to the content and its fade.
   bool drawsAt(double shown, Size size) {
-    if (wipe?.color != null) return true;
     if (alphaAt(shown) == 0) return false;
+    if (wipe?.color != null) return true;
     final Rect? opening = openingAt(shown, size);
     return opening == null || (opening.width > 0 && opening.height > 0);
   }
