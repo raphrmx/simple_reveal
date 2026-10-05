@@ -25,6 +25,7 @@ the pieces inside them can follow one after the other.
 ![Maintainer](https://img.shields.io/badge/Maintainer-Raphael_Vrient-733d90)
 [![Licence](https://img.shields.io/badge/Licence-MIT-8C6A3F)](LICENSE)
 ![Platforms](https://img.shields.io/badge/Platforms-Android,_iOS,_macOS,_Windows,_Linux,_Web-22375C.svg)
+[![Donate with PayPal](https://img.shields.io/badge/Donate-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=ZN6D382YQAV5N)
 
 ## Install
 
@@ -286,3 +287,14 @@ cd example && flutter run
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
+## More from COMAPPS
+
+Scroll effects for Flutter:
+
+| Package | What it does |
+| --- | --- |
+| [simple_parallax](https://pub.dev/packages/simple_parallax) | Parallax widgets, in pure Dart. |
+
+Every package COMAPPS publishes is listed at
+[packages.comapps.be](https://packages.comapps.be).

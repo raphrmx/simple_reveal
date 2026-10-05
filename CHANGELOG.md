@@ -1,5 +1,13 @@
 # SimpleReveal Versions
 
+## 0.1.4
+
+### Changed
+
+- The badge row carries a PayPal donation badge, `funding` points pub.dev
+  at the same donation page, and the README ends on the other packages
+  COMAPPS publishes. Nothing about the library changed.
+
 ## 0.1.3
 
 ### Added
